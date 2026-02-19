@@ -10,7 +10,7 @@ export default function LoginScreen() {
     const expoUrl = Linking.createURL('/'); 
     
     // 2. Tu URL de ngrok (asegúrate de que el backend esté corriendo)
-    const backendUrl = "https://lauran-plucky-shanae.ngrok-free.dev/auth/google";
+    const backendUrl = `${process.env.EXPO_PUBLIC_BACKEND_URL}/auth/google`;
 
     try {
       // 3. Abrimos la sesión de autenticación
