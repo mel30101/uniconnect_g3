@@ -1,43 +1,35 @@
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Button, FlatList, Text, TextInput, View } from "react-native";
-import { getMessages, sendMessage } from "../../../services/chatService";
-import { Message } from "../../../types/Message";
+import { subscribeToMessages } from '@/services/chatService';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, View } from 'react-native';
+import ChatBubble from '../../../components/chat/ChatBubble';
+import MessageInput from '../../../components/chat/MessageInput';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ChatScreen() {
-  const { chatId } = useLocalSearchParams();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState("");
+  const { chatId } = useLocalSearchParams<{ chatId: string }>();
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
-    loadMessages();
-  }, []);
-
-  const loadMessages = async () => {
-    const data = await getMessages(chatId as string);
-    setMessages(data);
-  };
-
-  const handleSend = async () => {
-    await sendMessage(chatId as string, "UID_USUARIO", text);
-    setText("");
-    loadMessages();
-  };
+    if (!chatId) return;
+    const unsubscribe = subscribeToMessages(chatId, setMessages);
+    return unsubscribe;
+  }, [chatId]);
 
   return (
     <View style={{ flex: 1 }}>
       <FlatList
         data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <Text>{item.text}</Text>}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <ChatBubble
+            message={item}
+            isOwn={item.senderId === user?.uid}
+          />
+        )}
       />
-
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Escribe un mensaje..."
-      />
-      <Button title="Enviar" onPress={handleSend} />
+      <MessageInput chatId={chatId} />
     </View>
   );
 }

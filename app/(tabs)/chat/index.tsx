@@ -1,31 +1,44 @@
+import { useAuth } from "@/app/context/AuthContext";
+import ChatListItem from "@/components/chat/ChatListItem";
+import { subscribeToUserChats } from "@/services/chatService";
 import { useRouter } from "expo-router";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { FlatList, Text, View } from "react-native";
 import { Chat } from "../../../types/Chat";
 
 export default function ChatListScreen() {
+  const { user } = useAuth();
   const router = useRouter();
+  const [chats, setChats] = useState<Chat[]>([]);
 
-  const chats: Chat[] = [];
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToUserChats(user.uid, setChats);
+    return unsubscribe;
+  }, [user]);
+
+  if (!user) {
+    return <Text>Cargando...</Text>;
+  }
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "bold" }}>Chats</Text>
-
+    <View style={{ flex: 1 }}>
       <FlatList
         data={chats}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <Pressable
+          <ChatListItem
+            chat={item}
             onPress={() =>
-              router.push({
-                pathname: "./[chatId]",
-                params: { chatId: item.id },
-              })
+              router.push(`/chat/${item.id}`)
             }
-          >
-            <Text>{item.lastMessage}</Text>
-          </Pressable>
+          />
         )}
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', marginTop: 40 }}>
+            No tienes chats aún
+          </Text>
+        }
       />
     </View>
   );
