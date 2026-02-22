@@ -30,7 +30,7 @@ export default function ChatListScreen() {
           <ChatListItem
             chat={item}
             onPress={() =>
-              router.push(`/chat/${item.id}`)
+              router.push(`./chat/${item.id}`)
             }
           />
         )}
