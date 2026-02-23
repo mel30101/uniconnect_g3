@@ -22,3 +22,10 @@ export const searchStudents = async (
     }
     return await response.json();
 };
+
+export const getSubjects = async () => {
+    const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/subjects`
+    );
+    return response.json();
+};
