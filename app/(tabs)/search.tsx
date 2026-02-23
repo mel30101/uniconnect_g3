@@ -83,26 +83,39 @@ export default function SearchScreen() {
         setUsers([]);
     };
 
+
     return (
         <View style={styles.container}>
+
             <View style={styles.searchContainer}>
-                <Ionicons
-                    name="search"
-                    size={20}
-                    color="#999"
-                    style={styles.searchIcon}
-                />
+                <Ionicons name="search" size={20} color="#9ca3af" />
                 <TextInput
-                    placeholder="Buscar compañeros..."
-                    placeholderTextColor="#999"
+                    placeholder="Buscar por nombre..."
+                    placeholderTextColor="#9ca3af"
                     value={search}
                     onChangeText={setSearch}
                     style={styles.input}
                 />
+                {search.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearch("")}>
+                        <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                    </TouchableOpacity>
+                )}
             </View>
 
-            <View>
-                <Text style={styles.sectionTitle}>Filtrar por materia</Text>
+            <View style={styles.filterCard}>
+                <View style={styles.filterHeader}>
+                    <Text style={styles.filterTitle}>Filtros</Text>
+                    {(selectedMateria || onlyMonitors) && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>
+                                {(selectedMateria ? 1 : 0) + (onlyMonitors ? 1 : 0)}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                <Text style={styles.sectionLabel}>Materia</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {subjects.map((subject) => (
                         <TouchableOpacity
@@ -128,44 +141,51 @@ export default function SearchScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
+
+                <View style={styles.switchRow}>
+                    <Text style={styles.sectionLabel}>Solo monitores</Text>
+                    <Switch
+                        value={onlyMonitors}
+                        onValueChange={setOnlyMonitors}
+                    />
+                </View>
             </View>
 
-            <View style={styles.monitorContainer}>
-                <Text style={styles.sectionTitle}>Solo monitores</Text>
-                <Switch
-                    value={onlyMonitors}
-                    onValueChange={setOnlyMonitors}
-                />
-            </View>
-
-            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-                <TouchableOpacity
-                    onPress={() => {
-                        animatePress();
-                        fetchStudents();
-                    }}
-                    style={styles.searchButton}
-                >
-                    <Text style={styles.searchButtonText}>
-                        {loading ? "Buscando..." : "Buscar"}
-                    </Text>
-                </TouchableOpacity>
-            </Animated.View>
-
-            <TouchableOpacity onPress={clearFilters}>
-                <Text style={styles.clearText}>Limpiar filtros</Text>
+            <TouchableOpacity
+                onPress={fetchStudents}
+                style={[
+                    styles.searchButton,
+                    loading && { opacity: 0.7 }
+                ]}
+                disabled={loading}
+            >
+                <Text style={styles.searchButtonText}>
+                    {loading ? "Buscando..." : "Buscar"}
+                </Text>
             </TouchableOpacity>
+
+            {(search || selectedMateria || onlyMonitors) && (
+                <TouchableOpacity onPress={clearFilters}>
+                    <Text style={styles.clearText}>Limpiar filtros</Text>
+                </TouchableOpacity>
+            )}
 
             <FlatList
                 data={users}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => <UserCard user={item} />}
-                contentContainerStyle={{ paddingTop: 15 }}
+                contentContainerStyle={{ paddingTop: 15, paddingBottom: 30 }}
                 ListEmptyComponent={
                     !loading ? (
-                        <Text style={styles.emptyText}>
-                            No se encontraron resultados
-                        </Text>
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="search-outline" size={40} color="#d1d5db" />
+                            <Text style={styles.emptyTitle}>
+                                No encontramos resultados
+                            </Text>
+                            <Text style={styles.emptySubtitle}>
+                                Intenta ajustar los filtros
+                            </Text>
+                        </View>
                     ) : null
                 }
             />
@@ -262,5 +282,74 @@ const styles = StyleSheet.create({
     chipTextActive: {
         color: "#ffffff",
         fontWeight: "600",
+    },
+
+    filterCard: {
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+
+    filterHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+
+    filterTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#111827",
+    },
+
+    badge: {
+        backgroundColor: "#4f46e5",
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+
+    badgeText: {
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: "600",
+    },
+
+    sectionLabel: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#6b7280",
+        marginBottom: 8,
+    },
+
+    switchRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 15,
+    },
+
+    emptyContainer: {
+        alignItems: "center",
+        marginTop: 40,
+    },
+
+    emptyTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        marginTop: 10,
+        color: "#374151",
+    },
+
+    emptySubtitle: {
+        fontSize: 14,
+        color: "#9ca3af",
+        marginTop: 4,
     },
 });
