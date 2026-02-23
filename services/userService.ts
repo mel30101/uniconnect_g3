@@ -15,7 +15,10 @@ export const searchStudents = async (
     );
 
     if (!response.ok) {
-        throw new Error("Error al buscar estudiante");
+        const text= await response.text();
+        console.log("STATUS:", response.status);
+        console.log("BODY:", text)
+        throw new Error(`Backend error: ${response.status}`);
     }
     return await response.json();
 };
