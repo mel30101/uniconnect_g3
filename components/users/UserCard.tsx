@@ -1,18 +1,17 @@
-import { StyleSheet, Text, View } from "react-native";
-import { User } from "../../types/User";
+import { useRouter } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
-interface Props {
-    user: User;
-}
-
-export default function UserCard({user}: Props) {
+export default function UserCard({ user }: { user: any }) {
+    const router = useRouter();
     return (
-        <View style={styles.card}>
+        <TouchableOpacity 
+            style={styles.card} 
+            onPress={() => router.push(`../user/${user.id}`)}
+        >
             <Text style={styles.name}>{user.name}</Text>
-            <Text>{user.carrera}</Text>
-            {user.esMonitor && <Text style={styles.monitor}>Monitor</Text>}
-        </View>
-    )
+            {/* Otros datos rápidos del usuario */}
+        </TouchableOpacity>
+    );
 }
 
 const styles = StyleSheet.create({
