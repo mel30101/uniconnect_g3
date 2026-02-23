@@ -1,5 +1,6 @@
 import { db } from '@/config/firebase';
-import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+
 
 export const sendMessage = async (chatId: string, text: string, senderId: string) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
@@ -30,7 +31,7 @@ export const subscribeToMessages = (chatId: string, callback: Function) => {
   });
 };
 
-export const subscribeToUserChats = (userId: string,callback: Function) => {
+export const subscribeToUserChats = (userId: string, callback: Function) => {
   const q = query(
     collection(db, 'chats'),
     where('participants', 'array-contains', userId),
@@ -44,4 +45,36 @@ export const subscribeToUserChats = (userId: string,callback: Function) => {
     }));
     callback(chats);
   });
+};
+
+export const getOrCreateChat = async (
+  currentUserId: string,
+  otherUserId: string
+) => {
+  const q = query(
+    collection(db, 'chats'),
+    where('participants', 'array-contains', currentUserId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  const existingChat = snapshot.docs.find(doc => {
+    const data = doc.data();
+    return (
+      data.participants.length === 2 &&
+      data.participants.includes(otherUserId)
+    );
+  });
+
+  if (existingChat) {
+    return existingChat.id;
+  }
+
+  const newChatRef = await addDoc(collection(db, 'chats'), {
+    participants: [currentUserId, otherUserId],
+    lastMessage: '',
+    updatedAt: serverTimestamp(),
+  });
+
+  return newChatRef.id;
 };
