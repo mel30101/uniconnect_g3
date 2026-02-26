@@ -73,7 +73,9 @@ export default function ExternalProfileScreen() {
 
                     const chatId = await getOrCreateChat(
                         authUser.uid,
-                        id as string
+                        id as string,
+                        authUser.name ?? "usuario",
+                        user.userName
                     );
 
                     console.log("CHAT ID:", chatId);

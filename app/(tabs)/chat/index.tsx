@@ -29,6 +29,7 @@ export default function ChatListScreen() {
         renderItem={({ item }) => (
           <ChatListItem
             chat={item}
+            currentUserId={user.uid}
             onPress={() =>
               router.push(`./chat/${item.id}`)
             }

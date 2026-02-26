@@ -49,8 +49,12 @@ export const subscribeToUserChats = (userId: string, callback: Function) => {
 
 export const getOrCreateChat = async (
   currentUserId: string,
-  otherUserId: string
+  otherUserId: string,
+  currentUserName?: string,
+  otherUserName?: string
 ) => {
+  const chatsRef = collection(db, "chats");
+
   const q = query(
     collection(db, 'chats'),
     where('participants', 'array-contains', currentUserId)
@@ -59,22 +63,23 @@ export const getOrCreateChat = async (
   const snapshot = await getDocs(q);
 
   const existingChat = snapshot.docs.find(doc => {
-    const data = doc.data();
-    return (
-      data.participants.length === 2 &&
-      data.participants.includes(otherUserId)
-    );
+    const participants = doc.data().participants;
+    return participants.includes(otherUserId)
   });
 
   if (existingChat) {
     return existingChat.id;
   }
 
-  const newChatRef = await addDoc(collection(db, 'chats'), {
+  const chatDoc = await addDoc(chatsRef, {
     participants: [currentUserId, otherUserId],
-    lastMessage: '',
-    updatedAt: serverTimestamp(),
+    participantsInfo: {
+      [currentUserId]: {name: currentUserName},
+      [otherUserId]: {name: otherUserName}
+    },
+    lastMessage: "",
+    updatedAt: serverTimestamp()
   });
+  return chatDoc.id;
 
-  return newChatRef.id;
 };
