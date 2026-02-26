@@ -1,6 +1,13 @@
 import { Pressable, Text } from 'react-native';
 
-export default function ChatListItem({ chat, onPress }: any) {
+export default function ChatListItem({ chat, currentUserId ,onPress }: any) {
+
+    const otherUserId = chat.participants?.find((id: string) => id !== currentUserId);
+
+    const otherUserName = otherUserId && chat.participantsInfo?.[otherUserId]?.name?
+    chat.participantsInfo[otherUserId].name
+    : 'Usuario desconocido';
+
     return (
         <Pressable
             onPress={onPress}
@@ -11,7 +18,7 @@ export default function ChatListItem({ chat, onPress }: any) {
             }}
         >
             <Text style={{ fontWeight: '600', fontSize: 16 }}>
-                Chat
+                {otherUserName}
             </Text>
 
             {chat.lastMessage && (

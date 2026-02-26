@@ -1,6 +1,11 @@
 export interface Chat {
     id: string;
-    participantss: string[];
-    lastMessage: string;
-    updatedAt: any;
+    participants: string[];
+    participantsInfo?: {
+        [uid: string]: {
+            name: string;
+        };
+    };
+    lastMessage?: string;
+    updatedAt?: any;
 }
