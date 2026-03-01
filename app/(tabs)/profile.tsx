@@ -20,7 +20,7 @@ export default function ProfileScreen() {
   const { user } = useAuth();
   const studentId = user?.uid;
   const userName = user?.name;
-  
+
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
@@ -113,8 +113,8 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Image 
-          source={{ uri: 'https://www.ucaldas.edu.co/portal/wp-content/uploads/2020/05/logo_ucaldas_blanco.png' }} 
+        <Image
+          source={{ uri: 'https://www.ucaldas.edu.co/portal/wp-content/uploads/2020/05/logo_ucaldas_blanco.png' }}
           style={styles.loadingLogo}
           resizeMode="contain"
         />
@@ -132,11 +132,11 @@ export default function ProfileScreen() {
         <View style={styles.content}>
           <View style={styles.headerCard}>
             <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{userName?.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{userName?.charAt(0)}</Text>
             </View>
             <Text style={styles.mainTitle}>{userName}</Text>
             <Text style={styles.careerBadge}>
-                {careers.find(c => c.id === selectedCareer)?.name || "Carrera"}
+              {careers.find(c => c.id === selectedCareer)?.name || "Carrera"}
             </Text>
             {isMonitor && (
               <View style={styles.monitorBadge}>
@@ -150,8 +150,8 @@ export default function ProfileScreen() {
             section.subjects.filter(s => selectedSubjects.includes(s.id)).map(subject => (
               <View key={subject.id} style={styles.subjectDisplay}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="book-outline" size={18} color={UCaldasTheme.azulOscuro} style={{ marginRight: 10 }} />
-                    <Text style={styles.subjectText}>{subject.name}</Text>
+                  <Ionicons name="book-outline" size={18} color={UCaldasTheme.azulOscuro} style={{ marginRight: 10 }} />
+                  <Text style={styles.subjectText}>{subject.name}</Text>
                 </View>
               </View>
             ))
@@ -166,11 +166,11 @@ export default function ProfileScreen() {
         /* --- VISTA DE FORMULARIO --- */
         <View style={styles.content}>
           <Text style={styles.formTitle}>Información Académica</Text>
-          
+
           <Text style={styles.label}>Carrera Universitaria:</Text>
           {Platform.OS === 'ios' ? (
-            <TouchableOpacity 
-              style={[styles.iosPickerBtn, hasProfile && styles.disabledCard]} 
+            <TouchableOpacity
+              style={[styles.iosPickerBtn, hasProfile && styles.disabledCard]}
               onPress={showCareerPickerIOS}
               disabled={hasProfile}
             >
@@ -194,11 +194,11 @@ export default function ProfileScreen() {
 
           <View style={styles.rowCard}>
             <Text style={styles.label}>¿Eres monitor este semestre?</Text>
-            <Switch 
-                value={isMonitor} 
-                onValueChange={setIsMonitor} 
-                trackColor={{ false: "#767577", true: UCaldasTheme.dorado }}
-                thumbColor={isMonitor ? UCaldasTheme.azulOscuro : "#f4f3f4"}
+            <Switch
+              value={isMonitor}
+              onValueChange={setIsMonitor}
+              trackColor={{ false: "#767577", true: UCaldasTheme.dorado }}
+              thumbColor={isMonitor ? UCaldasTheme.azulOscuro : "#f4f3f4"}
             />
           </View>
 
@@ -207,11 +207,11 @@ export default function ProfileScreen() {
             <View key={section.sectionId} style={{ marginBottom: 15 }}>
               <Text style={styles.sectionTitle}>{section.sectionName}</Text>
               {section.subjects.map(subject => (
-                <TouchableOpacity 
-                  key={subject.id} 
+                <TouchableOpacity
+                  key={subject.id}
                   style={[styles.subjectItem, selectedSubjects.includes(subject.id) && styles.selected]}
                   onPress={() => {
-                    const newSelection = selectedSubjects.includes(subject.id) 
+                    const newSelection = selectedSubjects.includes(subject.id)
                       ? selectedSubjects.filter(id => id !== subject.id)
                       : [...selectedSubjects, subject.id];
                     setSelectedSubjects(newSelection);

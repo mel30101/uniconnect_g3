@@ -1,45 +1,48 @@
-import { getSubjects, searchStudents } from "@/services/userService";
+import { Collapsible } from "@/components/Collapsible";
+import { getCareerStructure, searchStudents } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    FlatList,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from "react-native";
+import { Animated, FlatList, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import UserCard from "../../components/users/UserCard";
 import { User } from "../../types/User";
+import UCaldasTheme from "../constants/Colors";
+import { useAuth } from "../context/AuthContext";
 
 interface Subject {
     id: string;
     name: string;
+    sectionId: string;
+}
+
+interface CareerSection {
+    sectionId: string;
+    sectionName: string;
+    subjects: Subject[];
 }
 
 export default function SearchScreen() {
     const [users, setUsers] = useState<User[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [sections, setSections] = useState<CareerSection[]>([]);
     const [search, setSearch] = useState<string>("");
-    const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
+    const {user} = useAuth();
+    const [selectedMaterias, setSelectedMaterias] = useState<string[]>([]);
+    
     const [onlyMonitors, setOnlyMonitors] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [showFilters, setShowFilters] = useState<boolean>(true);
 
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
-        loadSubjects();
+        loadSection();
     }, []);
 
-    const loadSubjects = async () => {
+    const loadSection = async () => {
         try {
-            const data = await getSubjects();
-            setSubjects(data);
+            const data = await getCareerStructure("422");
+            setSections(data);
         } catch (error) {
-            console.error("Error cargando materias", error);
+            console.error("Error cargando secciones", error);
         }
     };
 
@@ -61,11 +64,13 @@ export default function SearchScreen() {
     const fetchStudents = async () => {
         try {
             setLoading(true);
+            setShowFilters(false);
 
             const data = await searchStudents(
                 search.trim(),
-                selectedMateria || undefined,
-                onlyMonitors
+                selectedMaterias.length > 0 ? selectedMaterias : undefined,
+                onlyMonitors,
+                user?.uid
             );
 
             setUsers(data);
@@ -78,98 +83,138 @@ export default function SearchScreen() {
 
     const clearFilters = () => {
         setSearch("");
-        setSelectedMateria(null);
+        setSelectedMaterias([]); // 3. Vaciamos el arreglo al limpiar
         setOnlyMonitors(false);
         setUsers([]);
+        setShowFilters(true);
     };
 
+    // 4. Función para agregar o quitar una materia del arreglo
+    const toggleMateria = (subjectId: string) => {
+        setSelectedMaterias((prev) => {
+            if (prev.includes(subjectId)) {
+                // Si ya está seleccionada, la quitamos
+                return prev.filter((id) => id !== subjectId);
+            } else {
+                // Si no está, la agregamos
+                return [...prev, subjectId];
+            }
+        });
+    };
 
     return (
         <View style={styles.container}>
 
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color="#9ca3af" />
-                <TextInput
-                    placeholder="Buscar por nombre..."
-                    placeholderTextColor="#9ca3af"
-                    value={search}
-                    onChangeText={setSearch}
-                    style={styles.input}
-                />
-                {search.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearch("")}>
-                        <Ionicons name="close-circle" size={20} color="#9ca3af" />
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            <View style={styles.filterCard}>
-                <View style={styles.filterHeader}>
-                    <Text style={styles.filterTitle}>Filtros</Text>
-                    {(selectedMateria || onlyMonitors) && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>
-                                {(selectedMateria ? 1 : 0) + (onlyMonitors ? 1 : 0)}
-                            </Text>
-                        </View>
+            {/* BARRA DE BÚSQUEDA Y BOTÓN DE FILTROS */}
+            <View style={styles.topRow}>
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search" size={20} color="#9ca3af" />
+                    <TextInput
+                        placeholder="Buscar por nombre..."
+                        placeholderTextColor="#9ca3af"
+                        value={search}
+                        onChangeText={setSearch}
+                        onSubmitEditing={fetchStudents}
+                        style={styles.input}
+                    />
+                    {search.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearch("")}>
+                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                        </TouchableOpacity>
                     )}
                 </View>
 
-                <Text style={styles.sectionLabel}>Materia</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {subjects.map((subject) => (
-                        <TouchableOpacity
-                            key={subject.id}
-                            onPress={() =>
-                                setSelectedMateria(
-                                    selectedMateria === subject.id ? null : subject.id
-                                )
-                            }
-                            style={[
-                                styles.chip,
-                                selectedMateria === subject.id && styles.chipActive,
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.chipText,
-                                    selectedMateria === subject.id && styles.chipTextActive,
-                                ]}
-                            >
-                                {subject.name}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                <View style={styles.switchRow}>
-                    <Text style={styles.sectionLabel}>Solo monitores</Text>
-                    <Switch
-                        value={onlyMonitors}
-                        onValueChange={setOnlyMonitors}
+                {/* BOTÓN PARA ABRIR/CERRAR FILTROS */}
+                <TouchableOpacity
+                    style={[styles.filterIconBtn, showFilters && styles.filterIconBtnActive]}
+                    onPress={() => setShowFilters(!showFilters)}
+                >
+                    <Ionicons
+                        name="options-outline"
+                        size={24}
+                        color={showFilters ? "#fff" : UCaldasTheme.azulOscuro}
                     />
-                </View>
+                </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-                onPress={fetchStudents}
-                style={[
-                    styles.searchButton,
-                    loading && { opacity: 0.7 }
-                ]}
-                disabled={loading}
-            >
-                <Text style={styles.searchButtonText}>
-                    {loading ? "Buscando..." : "Buscar"}
-                </Text>
-            </TouchableOpacity>
+            {/* SECCIÓN DE FILTROS Y BOTONES (Se oculta al buscar) */}
+            {showFilters && (
+                <View style={styles.filtersWrapper}>
+                    <View style={styles.filterCard}>
+                        <View style={styles.filterHeader}>
+                            <Text style={styles.filterTitle}>Filtros</Text>
+                            {/* 5. Actualizamos la condición del badge para que cuente el arreglo */}
+                            {(selectedMaterias.length > 0 || onlyMonitors) && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {selectedMaterias.length + (onlyMonitors ? 1 : 0)}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
 
-            {(search || selectedMateria || onlyMonitors) && (
-                <TouchableOpacity onPress={clearFilters}>
-                    <Text style={styles.clearText}>Limpiar filtros</Text>
-                </TouchableOpacity>
+                        <Text style={styles.sectionLabel}>Secciones y Materias</Text>
+                        <View style={styles.sectionsContainer}>
+                            {sections.map((section) => (
+                                <Collapsible key={section.sectionId} title={section.sectionName}>
+                                    <View style={styles.chipsContainer}>
+                                        {section.subjects.map((subject) => (
+                                            <TouchableOpacity
+                                                key={subject.id}
+                                                onPress={() => toggleMateria(subject.id)}
+                                                style={[
+                                                    styles.chip,
+                                                    // 6. Verificamos si el ID está en el arreglo
+                                                    selectedMaterias.includes(subject.id) && styles.chipActive,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.chipText,
+                                                        selectedMaterias.includes(subject.id) && styles.chipTextActive,
+                                                    ]}
+                                                >
+                                                    {subject.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </Collapsible>
+                            ))}
+                        </View>
+
+                        <View style={styles.switchRow}>
+                            <Text style={styles.sectionLabel}>Solo monitores</Text>
+                            <Switch
+                                value={onlyMonitors}
+                                onValueChange={setOnlyMonitors}
+                            />
+                        </View>
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={fetchStudents}
+                        style={[
+                            styles.searchButton,
+                            loading && { opacity: 0.7 }
+                        ]}
+                        disabled={loading}
+                    >
+                        <Text style={styles.searchButtonText}>
+                            {loading ? "Buscando..." : "Aplicar Filtros y Buscar"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {/* 7. Actualizamos la condición para mostrar el botón de limpiar */}
+                    {(search || selectedMaterias.length > 0 || onlyMonitors) && (
+                        <TouchableOpacity onPress={clearFilters}>
+                            <Text style={styles.clearText}>Limpiar filtros</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             )}
 
+            {/* LISTA DE ESTUDIANTES */}
             <FlatList
                 data={users}
                 keyExtractor={(item) => item.id}
@@ -200,17 +245,45 @@ const styles = StyleSheet.create({
         backgroundColor: "#f4f6f8",
     },
 
+    topRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 20,
+        gap: 12,
+    },
+
     searchContainer: {
+        flex: 1,
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#fff",
         borderRadius: 12,
         paddingHorizontal: 12,
-        marginBottom: 20,
         shadowColor: "#000",
         shadowOpacity: 0.05,
         shadowRadius: 6,
         elevation: 2,
+    },
+
+    filterIconBtn: {
+        backgroundColor: "#fff",
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+
+    filterIconBtnActive: {
+        backgroundColor: UCaldasTheme.azulOscuro,
+    },
+
+    filtersWrapper: {
+        marginBottom: 10,
     },
 
     searchIcon: {
@@ -237,7 +310,7 @@ const styles = StyleSheet.create({
     },
 
     searchButton: {
-        backgroundColor: "#4f46e5",
+        backgroundColor: UCaldasTheme.azulOscuro,
         paddingVertical: 12,
         borderRadius: 10,
         alignItems: "center",
@@ -250,7 +323,7 @@ const styles = StyleSheet.create({
     },
 
     clearText: {
-        color: "#4f46e5",
+        color: "#374151",
         textAlign: "center",
         marginTop: 12,
         fontWeight: "600",
@@ -267,11 +340,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         backgroundColor: "#e5e7eb",
         borderRadius: 20,
-        marginRight: 10,
     },
 
     chipActive: {
-        backgroundColor: "#4f46e5",
+        backgroundColor: UCaldasTheme.azulOscuro,
     },
 
     chipText: {
@@ -289,7 +361,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 16,
-        shadowColor: "#000",
+        shadowColor: "#b0b0b0",
         shadowOpacity: 0.06,
         shadowRadius: 10,
         elevation: 3,
@@ -309,7 +381,7 @@ const styles = StyleSheet.create({
     },
 
     badge: {
-        backgroundColor: "#4f46e5",
+        backgroundColor: UCaldasTheme.azulOscuro,
         borderRadius: 12,
         paddingHorizontal: 8,
         paddingVertical: 2,
@@ -351,5 +423,18 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#9ca3af",
         marginTop: 4,
+    },
+
+    sectionsContainer: {
+        marginTop: 5,
+        marginBottom: 15,
+        gap: 10,
+    },
+
+    chipsContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        paddingVertical: 10,
     },
 });
