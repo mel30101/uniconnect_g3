@@ -2,7 +2,8 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router'; // Hook para la navegación en Expo Router
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { UCaldasTheme } from './constants/Colors';
 import { useAuth } from './context/AuthContext';
 
 export default function LoginScreen() {
@@ -54,7 +55,7 @@ export default function LoginScreen() {
         </Text>
         
         <TouchableOpacity 
-          style={[styles.button, { backgroundColor: '#333' }]} 
+          style={[styles.button, { backgroundColor: UCaldasTheme.azulOscuro }]} 
           onPress={() => setAuthError(false)}
         >
           <Text style={styles.buttonText}>Volver a intentar</Text>
@@ -65,10 +66,15 @@ export default function LoginScreen() {
 
   // Interfaz principal de Login
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>UniConnect G3</Text>
-      <Text style={styles.subtitle}>Inicia sesión para gestionar tu perfil académico</Text>
-      
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Image 
+        source={{ uri: 'https://vectorseek.com/wp-content/uploads/2023/09/Universidad-de-Caldas-Logo-Vector.svg-.png' }} 
+        style={{ width: 250, height: 250, marginBottom: 10 }}
+        resizeMode="contain"
+      />
+      <Text style={{ color: UCaldasTheme.azulOscuro, fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
+        UniConnect G3
+      </Text>
       <TouchableOpacity style={styles.button} onPress={handleGoogleLogin}>
         <Text style={styles.buttonText}>Iniciar sesión con Google</Text>
       </TouchableOpacity>

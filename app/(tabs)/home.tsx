@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import { UCaldasTheme } from '../constants/Colors';
 import { useAuth } from '../context/AuthContext';
 
 export default function WelcomeScreen() {
@@ -9,7 +10,12 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>¡Bienvenido a UniConnect!</Text>
+
+      <Image 
+        source={{ uri: 'https://vectorseek.com/wp-content/uploads/2023/09/Universidad-de-Caldas-Logo-Vector.svg-.png' }}
+        style={{ width: 100, height: 100, marginRight: 10 }}
+      />
+      <Text style={{ color: UCaldasTheme.azulOscuro, fontWeight: 'bold', fontSize: 24 }}>Universidad de Caldas</Text>
       <Text style={styles.userName}>{userName || 'Estudiante'}</Text>
       <Text style={styles.subtitle}>
         Explora las pestañas inferiores para configurar tu perfil o buscar compañeros.

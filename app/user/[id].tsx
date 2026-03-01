@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { UCaldasTheme } from "../constants/Colors";
 import { useAuth } from "../context/AuthContext";
 
 export default function ExternalProfileScreen() {
@@ -30,7 +31,7 @@ export default function ExternalProfileScreen() {
         fetchUserProfile();
     }, [id]);
 
-    if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} color="#4f46e5" />;
+    if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} color={UCaldasTheme.azulOscuro} />;
     if (!user) return <View style={styles.container}><Text>No se encontró el perfil.</Text></View>;
 
     return (
@@ -59,7 +60,7 @@ export default function ExternalProfileScreen() {
                 <Text style={styles.sectionTitle}>Materias que cursa:</Text>
                 {user.subjectNames?.map((name: string, index: number) => (
                     <View key={index} style={styles.subjectItem}>
-                        <Ionicons name="book-outline" size={18} color="#4f46e5" />
+                        <Ionicons name="book-outline" size={18} color={UCaldasTheme.azulOscuro} />
                         <Text style={styles.subjectText}>{name}</Text>
                     </View>
                 ))}
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "#4f46e5",
+        backgroundColor: UCaldasTheme.azulOscuro,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 15
@@ -126,13 +127,13 @@ const styles = StyleSheet.create({
     },
     career: {
         fontSize: 16,
-        color: "#4f46e5",
+        color: UCaldasTheme.azulOscuro,
         marginTop: 10,
         textAlign: "center",
         fontWeight: "600"
     },
-    monitorBadge: { backgroundColor: "#10b981", paddingHorizontal: 15, paddingVertical: 6, borderRadius: 20, marginTop: 15 },
-    monitorText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
+    monitorBadge: { backgroundColor: UCaldasTheme.dorado, paddingHorizontal: 15, paddingVertical: 6, borderRadius: 20, marginTop: 15 },
+    monitorText: { color: "#0a0a0a", fontWeight: "bold", fontSize: 13 },
     infoCard: { backgroundColor: "#fff", margin: 20, borderRadius: 16, padding: 20, elevation: 2 },
     sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 15, color: "#374151" },
     subjectItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
 
     // Estilos del nuevo botón
     chatButton: {
-        backgroundColor: "#4f46e5",
+        backgroundColor: UCaldasTheme.azulOscuro,
         flexDirection: "row",
         marginHorizontal: 20,
         padding: 16,
