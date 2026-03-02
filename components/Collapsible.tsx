@@ -15,12 +15,10 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
         onPress={() => setIsOpen((value) => !value)}
         activeOpacity={0.8}>
         
-        {/* 1. Pasamos el texto primero para que quede a la izquierda */}
         <ThemedText type="defaultSemiBold" style={{ color: '#111827' }}>
             {title}
         </ThemedText>
 
-        {/* 2. Dejamos el ícono de segundo para que quede a la derecha */}
         <IconSymbol
           name="chevron.right"
           size={18}
@@ -39,14 +37,14 @@ const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // <--- CLAVE: Esto empuja el texto a la izq. y la flecha a la der.
-    paddingVertical: 12, // <--- Le di un poco más de área para que sea más fácil tocarlo con el dedo
-    paddingHorizontal: 8, // <--- Un ligero padding lateral
-    borderBottomWidth: 1, // <--- Opcional: una línea sutil separadora
-    borderBottomColor: '#e5e7eb', // <--- Opcional: color de la línea
+    justifyContent: 'space-between', 
+    paddingVertical: 12, 
+    paddingHorizontal: 8, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#e5e7eb', 
   },
   content: {
     marginTop: 6,
-    paddingHorizontal: 8, // Alineamos el contenido con el título
+    paddingHorizontal: 8, 
   },
 });
