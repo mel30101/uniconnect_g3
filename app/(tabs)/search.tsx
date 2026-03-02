@@ -24,9 +24,9 @@ export default function SearchScreen() {
     const [users, setUsers] = useState<User[]>([]);
     const [sections, setSections] = useState<CareerSection[]>([]);
     const [search, setSearch] = useState<string>("");
-    const {user} = useAuth();
+    const { user } = useAuth();
     const [selectedMaterias, setSelectedMaterias] = useState<string[]>([]);
-    
+
     const [onlyMonitors, setOnlyMonitors] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [showFilters, setShowFilters] = useState<boolean>(true);
@@ -73,7 +73,7 @@ export default function SearchScreen() {
                 user?.uid
             );
 
-            setUsers(data);
+            setUsers(data); 
         } catch (error) {
             console.error("Error al buscar estudiante", error);
         } finally {
@@ -83,20 +83,17 @@ export default function SearchScreen() {
 
     const clearFilters = () => {
         setSearch("");
-        setSelectedMaterias([]); // 3. Vaciamos el arreglo al limpiar
+        setSelectedMaterias([]); 
         setOnlyMonitors(false);
         setUsers([]);
         setShowFilters(true);
     };
 
-    // 4. Función para agregar o quitar una materia del arreglo
     const toggleMateria = (subjectId: string) => {
         setSelectedMaterias((prev) => {
             if (prev.includes(subjectId)) {
-                // Si ya está seleccionada, la quitamos
                 return prev.filter((id) => id !== subjectId);
             } else {
-                // Si no está, la agregamos
                 return [...prev, subjectId];
             }
         });
@@ -143,7 +140,6 @@ export default function SearchScreen() {
                     <View style={styles.filterCard}>
                         <View style={styles.filterHeader}>
                             <Text style={styles.filterTitle}>Filtros</Text>
-                            {/* 5. Actualizamos la condición del badge para que cuente el arreglo */}
                             {(selectedMaterias.length > 0 || onlyMonitors) && (
                                 <View style={styles.badge}>
                                     <Text style={styles.badgeText}>
@@ -164,7 +160,6 @@ export default function SearchScreen() {
                                                 onPress={() => toggleMateria(subject.id)}
                                                 style={[
                                                     styles.chip,
-                                                    // 6. Verificamos si el ID está en el arreglo
                                                     selectedMaterias.includes(subject.id) && styles.chipActive,
                                                 ]}
                                             >
@@ -205,7 +200,6 @@ export default function SearchScreen() {
                         </Text>
                     </TouchableOpacity>
 
-                    {/* 7. Actualizamos la condición para mostrar el botón de limpiar */}
                     {(search || selectedMaterias.length > 0 || onlyMonitors) && (
                         <TouchableOpacity onPress={clearFilters}>
                             <Text style={styles.clearText}>Limpiar filtros</Text>

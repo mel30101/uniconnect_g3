@@ -82,7 +82,7 @@ export default function ExternalProfileScreen() {
                     console.log("CHAT ID:", chatId);
 
                     router.push({
-                        pathname: "/(tabs)/chat/[chatId]",
+                        pathname: "/chat/[chatId]",
                         params: { chatId },
                     });
                 }}

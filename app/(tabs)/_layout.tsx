@@ -15,12 +15,12 @@ export default function TabLayout() {
         },
         headerTintColor: UCaldasTheme.blanco,
         headerTitleAlign: 'left',
-        
+
         // 2. Insertar el Logo y el nombre de la Universidad
         headerTitle: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Image 
-              source={{ uri: 'https://www.ucaldas.edu.co/portal/wp-content/uploads/2023/06/Logo_80_anos_Universidad_de_Caldas_Blanco.png' }} 
+            <Image
+              source={{ uri: 'https://www.ucaldas.edu.co/portal/wp-content/uploads/2023/06/Logo_80_anos_Universidad_de_Caldas_Blanco.png' }}
               style={{ width: 70, height: 50, marginRight: 10 }}
               resizeMode="contain"
             />
@@ -57,6 +57,18 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
         }}
       />
+
+
+      {/* Pestaña de Chats*/}
+      <Tabs.Screen
+        name="chat/index"
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({ color }) => <Ionicons name="chatbubbles" size={24} color={color} />,
+        }}
+      />
     </Tabs>
+
+
   );
 }
