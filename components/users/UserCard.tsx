@@ -1,18 +1,29 @@
 import { useRouter } from "expo-router";
+import { memo } from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { User } from "../../types/User";
 
-export default function UserCard({ user }: { user: any }) {
+interface UserCardProps {
+  user: User;
+}
+
+function UserCard({ user }: UserCardProps) {
     const router = useRouter();
+    
+    console.log(`Renderizando tarjeta de: ${user.name}`); // Solo para que veas la magia en la consola
+
     return (
         <TouchableOpacity 
             style={styles.card} 
-            onPress={() => router.push(`../user/${user.id}`)}
+            onPress={() => router.push(`/user/${user.id}`)}
         >
             <Text style={styles.name}>{user.name}</Text>
-            {/* Otros datos rápidos del usuario */}
+            {user.esMonitor && <Text style={styles.monitor}>Monitor</Text>}
         </TouchableOpacity>
     );
 }
+
+export default memo(UserCard);
 
 const styles = StyleSheet.create({
     card: {
@@ -21,14 +32,20 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         borderRadius: 10,
         elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     name: {
         fontWeight: "bold",
         fontSize: 16,
+        color: "#1a1a1a",
     },
     monitor: {
         color: "green",
         fontWeight: "bold",
-    } ,
-
+        fontSize: 12,
+        marginTop: 4,
+    },
 });
