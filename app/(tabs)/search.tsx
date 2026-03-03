@@ -1,15 +1,16 @@
 import { useSearchStudents } from "@/hooks/useSearchStudents";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { FilterSection } from "../../components/search/FilterSection";
 import UserCard from "../../components/users/UserCard";
 import UCaldasTheme from "../constants/Colors";
-import { useAuth } from "../context/AuthContext";
 
 export default function SearchScreen() {
-    const { user } = useAuth();
-    const { users, sections, loading, performSearch, resetResults } = useSearchStudents(user?.uid);
+    const user = useAuthStore((state => state.user));
+
+    const { users, sections, loading, performSearch, resetResults } = useSearchStudents(user?.id);
 
     const [search, setSearch] = useState("");
     const [selectedMaterias, setSelectedMaterias] = useState<string[]>([]);
