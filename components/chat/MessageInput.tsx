@@ -1,12 +1,12 @@
-import { useAuth } from '@/app/context/AuthContext';
 import { sendMessage } from '@/services/chatService';
 import { useState } from 'react';
 import { Button, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function MessageInput({ chatId }: { chatId: string }) {
     const [text, setText] = useState('');
-    const { user } = useAuth();
+    const user = useAuthStore((state) => state.user);
     
     const insets = useSafeAreaInsets(); 
 

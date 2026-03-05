@@ -1,8 +1,11 @@
 export interface User {
-    id: string;
-    name: string;
-    carrera: string;
-    materiasIds: string[];
-    habilidadesIds: string[];
-    esMonitor: boolean;
+    uid: string;         // ID de Google/Firestore
+    name: string;        // Nombre completo
+    email: string;       // Correo @ucaldas
+    photo?: string;      // URL de la foto
+    
+    // Datos del Perfil Académico
+    careerId?: string;   
+    subjects?: string[]; 
+    isMonitor?: boolean; 
 }

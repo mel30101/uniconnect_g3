@@ -1,13 +1,13 @@
-import { useAuth } from "@/app/context/AuthContext";
 import ChatListItem from "@/components/chat/ChatListItem";
 import { subscribeToUserChats } from "@/services/chatService";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
+import { useAuthStore } from "../../../store/useAuthStore";
 import { Chat } from "../../../types/Chat";
 
 export default function ChatListScreen() {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const [chats, setChats] = useState<Chat[]>([]);
 

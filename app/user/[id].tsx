@@ -4,7 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { UCaldasTheme } from "../constants/Colors";
-import { useAuth } from "../context/AuthContext";
+
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function ExternalProfileScreen() {
     const { id } = useLocalSearchParams();
@@ -12,7 +13,7 @@ export default function ExternalProfileScreen() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    const {user: authUser} = useAuth();
+    const authUser = useAuthStore((state) => state.user);
 
     const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -36,7 +37,6 @@ export default function ExternalProfileScreen() {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* --- BOTÓN DE REGRESO --- */}
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={28} color="#111827" />
             </TouchableOpacity>
@@ -97,59 +97,39 @@ export default function ExternalProfileScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#f4f6f8" },
     backButton: {
-        marginTop: 50,
-        marginLeft: 20,
-        width: 40,
-        height: 40,
-        justifyContent: "center"
-    },
+        marginTop: 50, marginLeft: 20,
+        width: 40,height: 40,
+        justifyContent: "center"},
     header: {
         alignItems: "center",
         paddingHorizontal: 30, // Espacio lateral para que el texto no toque los bordes
-        paddingBottom: 20
-    },
+        paddingBottom: 20},
     avatarPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: UCaldasTheme.azulOscuro,
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 15
-    },
+        width: 100,height: 100,
+        borderRadius: 50,backgroundColor: UCaldasTheme.azulOscuro,
+        justifyContent: "center",alignItems: "center",
+        marginBottom: 15},
     avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
     name: {
-        fontSize: 22,
-        fontWeight: "bold",
-        color: "#111827",
-        textAlign: "center", // Centra el texto
-        width: '100%'
-    },
+        fontSize: 22, fontWeight: "bold", color: UCaldasTheme.azulOscuro,
+        textAlign: "center", width: '100%'},
     career: {
-        fontSize: 16,
-        color: UCaldasTheme.azulOscuro,
-        marginTop: 10,
-        textAlign: "center",
-        fontWeight: "600"
+        fontSize: 16, color: UCaldasTheme.azulOscuro,
+        marginTop: 10, textAlign: "center", fontWeight: "600"
     },
     monitorBadge: { backgroundColor: UCaldasTheme.dorado, paddingHorizontal: 15, paddingVertical: 6, borderRadius: 20, marginTop: 15 },
-    monitorText: { color: "#0a0a0a", fontWeight: "bold", fontSize: 13 },
+    monitorText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
     infoCard: { backgroundColor: "#fff", margin: 20, borderRadius: 16, padding: 20, elevation: 2 },
     sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 15, color: "#374151" },
     subjectItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
     subjectText: { marginLeft: 10, fontSize: 15, color: "#4b5563" },
 
-    // Estilos del nuevo botón
     chatButton: {
         backgroundColor: UCaldasTheme.azulOscuro,
-        flexDirection: "row",
-        marginHorizontal: 20,
-        padding: 16,
-        borderRadius: 12,
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 10,
-        elevation: 3
+        flexDirection: "row",marginHorizontal: 20,
+        padding: 16,borderRadius: 12,
+        justifyContent: "center",alignItems: "center",
+        marginTop: 10,elevation: 3
     },
     chatButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 }
 });

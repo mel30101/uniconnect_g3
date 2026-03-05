@@ -15,10 +15,10 @@ function UserCard({ user }: UserCardProps) {
     return (
         <TouchableOpacity 
             style={styles.card} 
-            onPress={() => router.push(`/user/${user.id}`)}
+            onPress={() => router.push(`/user/${user.uid}`)}
         >
             <Text style={styles.name}>{user.name}</Text>
-            {user.esMonitor && <Text style={styles.monitor}>Monitor</Text>}
+            {user.isMonitor && <Text style={styles.monitor}>Monitor</Text>}
         </TouchableOpacity>
     );
 }

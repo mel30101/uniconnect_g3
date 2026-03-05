@@ -1,5 +1,6 @@
 import { db } from '@/config/firebase';
 import { subscribeToMessages } from '@/services/chatService';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
@@ -8,11 +9,10 @@ import { FlatList, Image, Keyboard, KeyboardAvoidingView, Text, View } from 'rea
 import ChatBubble from '../../components/chat/ChatBubble';
 import MessageInput from '../../components/chat/MessageInput';
 import UCaldasTheme from '../constants/Colors';
-import { useAuth } from '../context/AuthContext';
 
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const [messages, setMessages] = useState<any[]>([]);
   const [chatDetails, setChatDetails] = useState<any>(null);
 
@@ -48,11 +48,10 @@ export default function ChatScreen() {
   }, [chatId]);
 
   const otherUserId = chatDetails?.participants?.find((id: string) => id !== user?.uid);
-
   const otherUserName = otherUserId && chatDetails?.participantsInfo?.[otherUserId]?.name
     ? chatDetails.participantsInfo[otherUserId].name
     : 'Cargando...';
-
+    
   return (
 
     <>

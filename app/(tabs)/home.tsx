@@ -1,11 +1,10 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { useAuthStore } from '../../store/useAuthStore';
 import { UCaldasTheme } from '../constants/Colors';
-import { useAuth } from '../context/AuthContext';
 
 export default function WelcomeScreen() {
-    const { user } = useAuth();
-    const studentId = user?.uid; // <--- AQUÍ YA NO SERÁ UNDEFINED
+    const user = useAuthStore((state) => state.user);
     const userName = user?.name;
 
   return (

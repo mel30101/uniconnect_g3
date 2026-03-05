@@ -1,22 +1,21 @@
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router'; // Hook para la navegación en Expo Router
+import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuthStore } from '../store/useAuthStore';
 import { UCaldasTheme } from './constants/Colors';
-import { useAuth } from './context/AuthContext';
 
 export default function LoginScreen() {
-  const { setUser } = useAuth();
+  const setUser = useAuthStore((state) => state.setUser);
   const [authError, setAuthError] = useState(false);
-  const router = useRouter(); // Inicializamos el router
+  const router = useRouter(); 
 
   const handleGoogleLogin = async () => {
     const expoUrl = Linking.createURL('/'); 
     const backendUrl = `${process.env.EXPO_PUBLIC_BACKEND_URL}/auth/google`;
 
     try {
-      // Abrimos la sesión de autenticación
       const result = await WebBrowser.openAuthSessionAsync(
         `${backendUrl}?redirect=${encodeURIComponent(expoUrl)}`,
         expoUrl
@@ -25,16 +24,16 @@ export default function LoginScreen() {
       if (result.type === 'success' && result.url) {
         const { queryParams } = Linking.parse(result.url);
 
-        // 1. Manejo de error de dominio institucional
         if (queryParams && queryParams.error === 'domain_not_allowed') {
           setAuthError(true);
         } 
         
-        // 2. Manejo de éxito: Verificamos que lleguen los datos necesarios (uid y name)
         else if (queryParams && queryParams.uid) {
           setUser({ 
             uid: queryParams.uid as string, 
-            name: queryParams.name as string 
+            name: queryParams.name as string,
+            email: queryParams.email as string,
+            photo: queryParams.photo as string
           });
           router.replace("/(tabs)/home");
         }
@@ -45,7 +44,6 @@ export default function LoginScreen() {
     }
   };
 
-  // Interfaz para mostrar cuando el correo no es @ucaldas.edu.co
   if (authError) {
     return (
       <View style={styles.container}>
