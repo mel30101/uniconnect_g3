@@ -83,12 +83,13 @@ export const useProfile = () => {
   };
 
   const saveProfile = async () => {
+    if (!user?.uid) return;
     try {
       const response = await fetch(`${BACKEND_URL}/api/academic-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          studentId: user?.uid, 
+          studentId: user.uid, 
           ...profileData 
         })
       });
