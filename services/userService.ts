@@ -2,18 +2,15 @@
 export const searchStudents = async (
     name?: string,
     subjectIds?: string[],
-    isMonitor?: boolean,
     excludeId?: string
 ) => {
     const params = new URLSearchParams();
 
     if (name) params.append("name", name);
 
-    if (subjectIds && subjectIds.length > 0){
+    if (subjectIds && subjectIds.length > 0) {
         params.append("subjectId", subjectIds.join(","));
-    } 
-
-    if (isMonitor) params.append("isMonitor", "true");
+    }
 
     if (excludeId) params.append("excludeId", excludeId);
 
@@ -22,7 +19,7 @@ export const searchStudents = async (
     );
 
     if (!response.ok) {
-        const text= await response.text();
+        const text = await response.text();
         console.log("STATUS:", response.status);
         console.log("BODY:", text)
         throw new Error(`Backend error: ${response.status}`);
@@ -41,10 +38,10 @@ export const getCareerStructure = async (careerId: string) => {
     const response = await fetch(
         `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/career-structure/${careerId}`
     );
-    
+
     if (!response.ok) {
         throw new Error("Error fetching career structure");
     }
-    
+
     return await response.json();
 };
