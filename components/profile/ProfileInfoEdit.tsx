@@ -41,18 +41,28 @@ export function ProfileInfoEdit({
             <TextInput
                 style={styles.input}
                 value={profileData.phone}
-                onChangeText={(text) => setProfileData({ ...profileData, phone: text })}
+                onChangeText={(text) => {
+                    // Solo permitir números
+                    const cleaned = text.replace(/[^0-9]/g, "");
+                    setProfileData({ ...profileData, phone: cleaned });
+                }}
                 placeholder="3000000000"
-                keyboardType="phone-pad"
+                keyboardType="numeric"
+                maxLength={10}
             />
 
             <Text style={styles.label}>Edad (Opcional):</Text>
             <TextInput
                 style={styles.input}
                 value={profileData.age}
-                onChangeText={(text) => setProfileData({ ...profileData, age: text })}
+                onChangeText={(text) => {
+                    // Solo permitir números
+                    const cleaned = text.replace(/[^0-9]/g, "");
+                    setProfileData({ ...profileData, age: cleaned });
+                }}
                 placeholder="Ej: 21"
                 keyboardType="numeric"
+                maxLength={2}
             />
 
             <Text style={styles.label}>Biografía (Opcional):</Text>

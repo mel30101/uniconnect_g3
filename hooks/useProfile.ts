@@ -15,6 +15,9 @@ export const useProfile = () => {
   const [sections, setSections] = useState<Section[]>([]);
 
   const [profileData, setProfileData] = useState({
+    facultyId: "",
+    academicLevelId: "",
+    formationLevelId: "",
     careerId: "",
     subjects: [] as string[], // Guardamos solo los IDs de las materias
     biography: "",
@@ -43,6 +46,9 @@ export const useProfile = () => {
       if (profileRes.ok) {
         const data = await profileRes.json();
         const initialProfile = {
+          facultyId: data.facultyId || "",
+          academicLevelId: data.academicLevelId || "",
+          formationLevelId: data.formationLevelId || "",
           careerId: data.careerId || "",
           subjects: data.subjects || [],
           biography: data.biography || "",
@@ -50,10 +56,14 @@ export const useProfile = () => {
           age: data.age?.toString() || "",
           studyPreference: data.studyPreference || "",
           showEmail: data.showEmail !== undefined ? data.showEmail : true,
+          ...data // Preservar nombres resueltos (facultyName, etc.)
         };
 
         setProfileData(initialProfile);
-        setHasProfile(true);
+        // Only consider the user to "have a profile" if they have selected a career
+        const profileExists = !!data.careerId;
+        setHasProfile(profileExists);
+        if (!profileExists) setIsEditing(true);
 
         // Sincronizar Zustand
         setUser({ ...user, ...initialProfile });
@@ -68,6 +78,10 @@ export const useProfile = () => {
             setSections(structData);
           }
         }
+      } else {
+        // No hay documento de perfil, forzar edición para onboarding
+        setHasProfile(false);
+        setIsEditing(true);
       }
     } catch (e) {
       console.error("Error cargando perfil:", e);
@@ -94,6 +108,45 @@ export const useProfile = () => {
 
   const saveProfile = async () => {
     if (!user?.uid) return;
+
+    // Validación obligatoria: Recorrido Académico completo
+    const { facultyId, academicLevelId, formationLevelId, careerId, subjects, phone, age } = profileData;
+
+    // Validación de Celular (si se proporciona, debe tener 10 dígitos)
+    if (phone && phone.length !== 10) {
+      Alert.alert(
+        "Celular Inválido",
+        "El número de celular debe tener exactamente 10 dígitos."
+      );
+      return;
+    }
+
+    // Validación de Edad (si se proporciona, debe tener 2 dígitos)
+    if (age && age.length !== 2) {
+      Alert.alert(
+        "Edad Inválida",
+        "La edad debe tener exactamente 2 dígitos."
+      );
+      return;
+    }
+
+    if (!facultyId || !academicLevelId || !formationLevelId || !careerId) {
+      Alert.alert(
+        "Información Incompleta",
+        "Para continuar, es obligatorio completar todo tu recorrido académico (Facultad, Niveles y Carrera)."
+      );
+      return;
+    }
+
+    // Nueva validación: Al menos una materia seleccionada
+    if (!subjects || subjects.length === 0) {
+      Alert.alert(
+        "Materias Pendientes",
+        "Debes seleccionar al menos una materia para registrar tu perfil académico."
+      );
+      return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/academic-profile`, {
         method: "POST",
@@ -105,7 +158,17 @@ export const useProfile = () => {
       });
 
       if (response.ok) {
-        setUser({ ...user!, ...profileData });
+        const updatedData = await response.json();
+
+        // Sincronizar estado local y global con la respuesta completa
+        // Usamos spread directo para asegurar que facultyName, careerName, etc. se mantengan
+        setProfileData((prev) => ({
+          ...prev,
+          ...updatedData,
+          age: updatedData.age?.toString() || "",
+        }));
+
+        setUser({ ...user!, ...updatedData });
         setHasProfile(true);
         setIsEditing(false);
         Alert.alert("¡Éxito!", "Perfil guardado correctamente");

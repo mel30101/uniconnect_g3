@@ -91,6 +91,16 @@ export default function ProfileScreen() {
       ) : (
         /* --- VISTA DE FORMULARIO (EDICIÓN / REGISTRO) --- */
         <View style={styles.content}>
+          {!hasProfile && (
+            <View style={{ marginBottom: 20, alignItems: 'center' }}>
+              <Ionicons name="person-add-outline" size={40} color={UCaldasTheme.dorado} />
+              <Text style={[styles.mainTitle, { marginTop: 10 }]}>Configura tu perfil</Text>
+              <Text style={{ color: '#666', textAlign: 'center', marginTop: 5, paddingHorizontal: 20 }}>
+                Completa tu información para empezar a conectar con la comunidad U de Caldas.
+              </Text>
+            </View>
+          )}
+
           <Collapsible title="Editar Información Personal">
             <View style={{ paddingTop: 10 }}>
               <ProfileInfoEdit

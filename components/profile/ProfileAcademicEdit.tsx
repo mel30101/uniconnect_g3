@@ -5,6 +5,8 @@ import { Collapsible } from "../Collapsible";
 import { UCaldasTheme } from "../../app/constants/Colors";
 import { profileStyles as styles } from "./ProfileStyles";
 
+import { AcademicHierarchySelector } from "./AcademicHierarchySelector";
+
 interface ProfileAcademicEditProps {
     profileData: any;
     setProfileData: (data: any) => void;
@@ -20,39 +22,13 @@ export function ProfileAcademicEdit({
     updateCareer,
     sections,
 }: ProfileAcademicEditProps) {
-    const selectedCareer = careers.find(c => c.id === profileData.careerId);
-
     return (
         <>
-            <View style={styles.card}>
-                <Collapsible title={selectedCareer?.name || "Selecciona tu carrera..."}>
-                    <View style={{ paddingVertical: 10 }}>
-                        {careers.map((career) => (
-                            <TouchableOpacity
-                                key={career.id}
-                                style={[
-                                    styles.subjectItem,
-                                    profileData.careerId === career.id && styles.selected,
-                                ]}
-                                onPress={() => updateCareer(career.id)}
-                            >
-                                <Text
-                                    style={
-                                        profileData.careerId === career.id
-                                            ? styles.whiteText
-                                            : styles.blackText
-                                    }
-                                >
-                                    {career.name}
-                                </Text>
-                                {profileData.careerId === career.id && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </Collapsible>
-            </View>
+            <AcademicHierarchySelector
+                profileData={profileData}
+                setProfileData={setProfileData}
+                updateCareer={updateCareer}
+            />
 
             <Text style={styles.sectionLabel}>Selecciona tus materias:</Text>
             {sections.map((section) => (
