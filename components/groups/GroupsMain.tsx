@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { UCaldasTheme } from '../../app/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { groupsStyles as styles } from './GroupsStyles';
+import { CreateGroupModal } from './CreateGroupModal';
+import { GroupCard } from './GroupCard';
+import { useGroups } from '../../hooks/useGroups';
 
 export default function GroupsMain() {
     const [activeTab, setActiveTab] = useState<'miembro' | 'admin'>('miembro');
+    const [modalVisible, setModalVisible] = useState(false);
+    const { managedGroups, fetchManagedGroups, loading } = useGroups();
+
+    useEffect(() => {
+        if (activeTab === 'admin') {
+            fetchManagedGroups();
+        }
+    }, [activeTab, fetchManagedGroups]);
 
     return (
         <View style={styles.container}>
@@ -39,15 +50,51 @@ export default function GroupsMain() {
                         </Text>
                     </View>
                 ) : (
-                    <View style={styles.placeholderContainer}>
-                        <Ionicons name="shield-checkmark-outline" size={80} color={UCaldasTheme.azulOscuro} />
-                        <Text style={styles.placeholderTitle}>Gestión de grupos</Text>
-                        <Text style={styles.placeholderSubtitle}>
-                            Aquí aparecerán los grupos que has creado.
-                        </Text>
+                    <View style={styles.adminContainer}>
+                        <View style={styles.tabHeader}>
+                            <Text style={styles.placeholderTitle}>Gestión de grupos</Text>
+                            <Text style={styles.placeholderSubtitle}>
+                                Grupos donde tienes rol administrativo.
+                            </Text>
+
+                            <TouchableOpacity
+                                style={styles.createButton}
+                                onPress={() => setModalVisible(true)}
+                            >
+                                <Ionicons name="add-circle" size={20} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={styles.createButtonText}>Crear Grupo</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {loading ? (
+                            <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} style={{ marginTop: 40 }} />
+                        ) : managedGroups.length > 0 ? (
+                            <View style={{ marginTop: 10 }}>
+                                {managedGroups.map((group) => (
+                                    <GroupCard key={group.id} group={group} isAdmin={true} />
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.placeholderContainer}>
+                                <Ionicons name="shield-checkmark-outline" size={80} color={UCaldasTheme.azulOscuro} />
+                                <Text style={styles.placeholderTitle}>Sin grupos que gestionar</Text>
+                                <Text style={styles.placeholderSubtitle}>
+                                    Aquí aparecerán los grupos que hayas creado.
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 )}
             </ScrollView>
+
+            <CreateGroupModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onSuccess={() => {
+                    setModalVisible(false);
+                    fetchManagedGroups();
+                }}
+            />
         </View>
     );
 }
