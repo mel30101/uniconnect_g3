@@ -49,12 +49,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Pestaña de Perfil - AQUÍ QUITAMOS EL HEADER DUPLICADO */}
+      {/* Pestaña de Mis Grupos */}
       <Tabs.Screen
-        name="profile"
+        name="mis-grupos"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
+          title: 'Mis Grupos',
+          tabBarIcon: ({ color }) => <Ionicons name="people" size={24} color={color} />,
         }}
       />
 
@@ -65,6 +65,15 @@ export default function TabLayout() {
         options={{
           title: 'Chats',
           tabBarIcon: ({ color }) => <Ionicons name="chatbubbles" size={24} color={color} />,
+        }}
+      />
+
+      {/* Pestaña de Perfil - AQUÍ QUITAMOS EL HEADER DUPLICADO */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
         }}
       />
     </Tabs>

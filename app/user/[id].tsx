@@ -47,23 +47,93 @@ export default function ExternalProfileScreen() {
                 </View>
 
                 <Text style={styles.name}>{user.userName}</Text>
-                <Text style={styles.career}>{user.careerName}</Text>
+                {/* La carrera ahora se muestra en la sección de Información Académica */}
 
-                {user.isMonitor && (
-                    <View style={styles.monitorBadge}>
-                        <Text style={styles.monitorText}>Monitor Académico</Text>
-                    </View>
+                {user.showEmail && (
+                    <Text style={styles.emailText}>{user.email}</Text>
                 )}
             </View>
 
+            {(user.age || user.phone || user.studyPreference || user.biography) ? (
+                <View style={styles.infoCard}>
+                    <Text style={styles.sectionTitle}>Información Personal</Text>
+
+                    {user.age ? (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="calendar-outline" size={20} color={UCaldasTheme.azulOscuro} />
+                            <Text style={styles.infoValue}>{user.age} años</Text>
+                        </View>
+                    ) : null}
+
+                    {user.phone ? (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="call-outline" size={20} color={UCaldasTheme.azulOscuro} />
+                            <Text style={styles.infoValue}>{user.phone}</Text>
+                        </View>
+                    ) : null}
+
+                    {user.studyPreference ? (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="school-outline" size={20} color={UCaldasTheme.azulOscuro} />
+                            <Text style={styles.infoValue}>Preferencia de estudio: {user.studyPreference}</Text>
+                        </View>
+                    ) : null}
+
+                    {user.biography ? (
+                        <View style={styles.bioContainer}>
+                            <Text style={styles.bioTitle}>Acerca de mí</Text>
+                            <Text style={styles.bioText}>{user.biography}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            ) : null}
+
             <View style={styles.infoCard}>
-                <Text style={styles.sectionTitle}>Materias que cursa:</Text>
-                {user.subjectNames?.map((name: string, index: number) => (
-                    <View key={index} style={styles.subjectItem}>
-                        <Ionicons name="book-outline" size={18} color={UCaldasTheme.azulOscuro} />
-                        <Text style={styles.subjectText}>{name}</Text>
+                <Text style={styles.sectionTitle}>Información Académica</Text>
+
+                <View style={readStyles.pathItem}>
+                    <Ionicons name="business-outline" size={20} color={UCaldasTheme.dorado} style={{ marginRight: 12 }} />
+                    <View>
+                        <Text style={readStyles.pathLabel}>Facultad</Text>
+                        <Text style={readStyles.pathValue}>{user.facultyName || "No especificada"}</Text>
                     </View>
-                ))}
+                </View>
+
+                <View style={readStyles.pathItem}>
+                    <Ionicons name="school-outline" size={20} color={UCaldasTheme.dorado} style={{ marginRight: 12 }} />
+                    <View>
+                        <Text style={readStyles.pathLabel}>Nivel Académico</Text>
+                        <Text style={readStyles.pathValue}>{user.academicLevelName || "No especificado"}</Text>
+                    </View>
+                </View>
+
+                <View style={readStyles.pathItem}>
+                    <Ionicons name="ribbon-outline" size={20} color={UCaldasTheme.dorado} style={{ marginRight: 12 }} />
+                    <View>
+                        <Text style={readStyles.pathLabel}>Nivel de Formación</Text>
+                        <Text style={readStyles.pathValue}>{user.formationLevelName || "No especificado"}</Text>
+                    </View>
+                </View>
+
+                <View style={readStyles.pathItem}>
+                    <Ionicons name="briefcase-outline" size={20} color={UCaldasTheme.dorado} style={{ marginRight: 12 }} />
+                    <View>
+                        <Text style={readStyles.pathLabel}>Carrera</Text>
+                        <Text style={readStyles.pathValue}>{user.careerName || "No especificada"}</Text>
+                    </View>
+                </View>
+
+                <Text style={[styles.sectionTitle, { marginTop: 15, fontSize: 16 }]}>Materias Actuales</Text>
+                {user.subjectNames && user.subjectNames.length > 0 ? (
+                    user.subjectNames.map((name: string, index: number) => (
+                        <View key={index} style={styles.subjectItem}>
+                            <Ionicons name="book-outline" size={18} color={UCaldasTheme.azulOscuro} />
+                            <Text style={styles.subjectText}>{name}</Text>
+                        </View>
+                    ))
+                ) : (
+                    <Text style={{ fontStyle: "italic", color: "#6b7280" }}>No hay materias registradas</Text>
+                )}
             </View>
 
             {/* --- BOTÓN DE INICIAR CHAT (PROVISIONAL) --- */}
@@ -94,25 +164,47 @@ export default function ExternalProfileScreen() {
     );
 }
 
+const readStyles = StyleSheet.create({
+    pathItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    pathLabel: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '500',
+    },
+    pathValue: {
+        fontSize: 15,
+        color: UCaldasTheme.azulOscuro,
+        fontWeight: '600',
+    }
+});
+
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#f4f6f8" },
     backButton: {
         marginTop: 50, marginLeft: 20,
-        width: 40,height: 40,
-        justifyContent: "center"},
+        width: 40, height: 40,
+        justifyContent: "center"
+    },
     header: {
         alignItems: "center",
         paddingHorizontal: 30, // Espacio lateral para que el texto no toque los bordes
-        paddingBottom: 20},
+        paddingBottom: 20
+    },
     avatarPlaceholder: {
-        width: 100,height: 100,
-        borderRadius: 50,backgroundColor: UCaldasTheme.azulOscuro,
-        justifyContent: "center",alignItems: "center",
-        marginBottom: 15},
+        width: 100, height: 100,
+        borderRadius: 50, backgroundColor: UCaldasTheme.azulOscuro,
+        justifyContent: "center", alignItems: "center",
+        marginBottom: 15
+    },
     avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
     name: {
         fontSize: 22, fontWeight: "bold", color: UCaldasTheme.azulOscuro,
-        textAlign: "center", width: '100%'},
+        textAlign: "center", width: '100%'
+    },
     career: {
         fontSize: 16, color: UCaldasTheme.azulOscuro,
         marginTop: 10, textAlign: "center", fontWeight: "600"
@@ -126,10 +218,44 @@ const styles = StyleSheet.create({
 
     chatButton: {
         backgroundColor: UCaldasTheme.azulOscuro,
-        flexDirection: "row",marginHorizontal: 20,
-        padding: 16,borderRadius: 12,
-        justifyContent: "center",alignItems: "center",
-        marginTop: 10,elevation: 3
+        flexDirection: "row", marginHorizontal: 20,
+        padding: 16, borderRadius: 12,
+        justifyContent: "center", alignItems: "center",
+        marginTop: 10, elevation: 3
     },
-    chatButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 }
+    chatButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+    emailText: {
+        fontSize: 15,
+        color: "#4b5563",
+        marginTop: 5,
+    },
+    infoRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 12,
+    },
+    infoValue: {
+        marginLeft: 10,
+        fontSize: 15,
+        color: "#4b5563",
+    },
+    bioContainer: {
+        marginTop: 10,
+        padding: 15,
+        backgroundColor: "#f9fafb",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#eee",
+    },
+    bioTitle: {
+        fontWeight: "bold",
+        color: UCaldasTheme.azulOscuro,
+        marginBottom: 8,
+        fontSize: 15,
+    },
+    bioText: {
+        color: "#4b5563",
+        fontSize: 14,
+        lineHeight: 22,
+    },
 });

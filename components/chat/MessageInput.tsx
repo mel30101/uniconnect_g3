@@ -18,12 +18,15 @@ export default function MessageInput({ chatId }: { chatId: string }) {
 
   const handlePickFile = async () => {
     if (!user) return;
+
     const res = await DocumentPicker.getDocumentAsync({
-      type: '*/*',             // todos los tipos
-      copyToCacheDirectory: false,
+      type: '*/*',
+      copyToCacheDirectory: true, 
     });
-    if (!res.canceled) {
-      await sendFileMessage(chatId, user.uid, res);
+
+    if (!res.canceled && res.assets && res.assets.length > 0) {
+      const asset = res.assets[0];
+      await sendFileMessage(chatId, user.uid, asset);
     }
   };
 

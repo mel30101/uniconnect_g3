@@ -13,7 +13,7 @@ export const useSearchStudents = (userId?: string, initialCareerId?: string) => 
     useEffect(() => {
         const verifyAcademicProfile = async () => {
             if (!userId) return;
-            
+
             if (initialCareerId) {
                 setActiveCareerId(initialCareerId);
                 return;
@@ -49,13 +49,12 @@ export const useSearchStudents = (userId?: string, initialCareerId?: string) => 
         loadSections();
     }, [activeCareerId]);
 
-    const performSearch = async (search: string, selectedMaterias: string[], onlyMonitors: boolean) => {
+    const performSearch = async (search: string, selectedMaterias: string[]) => {
         try {
             setLoading(true);
             const data = await searchStudents(
                 search.trim(),
                 selectedMaterias.length > 0 ? selectedMaterias : undefined,
-                onlyMonitors,
                 userId
             );
             setUsers(data);

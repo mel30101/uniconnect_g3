@@ -1,30 +1,36 @@
 import UCaldasTheme from "@/app/constants/Colors";
 import { Collapsible } from "@/components/Collapsible";
 import React from 'react';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface FilterSectionProps {
     sections: any[];
     selectedMaterias: string[];
-    onlyMonitors: boolean;
     onToggleMateria: (id: string) => void;
-    onToggleMonitors: (val: boolean) => void;
     onApply: () => void;
     onClear: () => void;
     loading: boolean;
     showClear: boolean;
 }
 
-export const FilterSection = ({ sections, selectedMaterias, onlyMonitors, onToggleMateria, onToggleMonitors, onApply, onClear, loading, showClear }: FilterSectionProps) => {
+export const FilterSection = ({
+    sections,
+    selectedMaterias,
+    onToggleMateria,
+    onApply,
+    onClear,
+    loading,
+    showClear
+}: FilterSectionProps) => {
     return (
         <View style={styles.filtersWrapper}>
             <View style={styles.filterCard}>
                 <View style={styles.filterHeader}>
                     <Text style={styles.filterTitle}>Filtros</Text>
-                    {(selectedMaterias.length > 0 || onlyMonitors) && (
+                    {selectedMaterias.length > 0 && (
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>
-                                {selectedMaterias.length + (onlyMonitors ? 1 : 0)}
+                                {selectedMaterias.length}
                             </Text>
                         </View>
                     )}
@@ -55,11 +61,6 @@ export const FilterSection = ({ sections, selectedMaterias, onlyMonitors, onTogg
                             </View>
                         </Collapsible>
                     ))}
-                </View>
-
-                <View style={styles.switchRow}>
-                    <Text style={styles.sectionLabel}>Solo monitores</Text>
-                    <Switch value={onlyMonitors} onValueChange={onToggleMonitors} />
                 </View>
             </View>
 
@@ -197,4 +198,4 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 10,
     },
-})
+});

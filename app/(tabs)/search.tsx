@@ -11,30 +11,28 @@ export default function SearchScreen() {
     const user = useAuthStore((state) => state.user);
 
     const { users, sections, loading, performSearch, resetResults, hasCareer } = useSearchStudents(
-        user?.uid, 
-        user?.careerId 
+        user?.uid,
+        user?.careerId
     );
 
     const [search, setSearch] = useState("");
     const [selectedMaterias, setSelectedMaterias] = useState<string[]>([]);
-    const [onlyMonitors, setOnlyMonitors] = useState(false);
     const [showFilters, setShowFilters] = useState(false); // Empezamos con filtros cerrados para ver resultados generales
 
     const handleSearch = () => {
         setShowFilters(false);
-        performSearch(search, selectedMaterias, onlyMonitors);
+        performSearch(search, selectedMaterias);
     };
 
     const clearFilters = () => {
         setSearch("");
         setSelectedMaterias([]);
-        setOnlyMonitors(false);
         resetResults();
         setShowFilters(true);
     };
 
     const toggleMateria = (id: string) => {
-        setSelectedMaterias(prev => 
+        setSelectedMaterias(prev =>
             prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
         );
     };
@@ -58,15 +56,15 @@ export default function SearchScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
-                
+
                 <TouchableOpacity
                     style={[styles.filterIconBtn, showFilters && styles.filterIconBtnActive]}
                     onPress={() => setShowFilters(!showFilters)}
                 >
-                    <Ionicons 
-                        name="options-outline" 
-                        size={24} 
-                        color={showFilters ? "#fff" : UCaldasTheme.azulOscuro} 
+                    <Ionicons
+                        name="options-outline"
+                        size={24}
+                        color={showFilters ? "#fff" : UCaldasTheme.azulOscuro}
                     />
                 </TouchableOpacity>
             </View>
@@ -75,13 +73,11 @@ export default function SearchScreen() {
                 <FilterSection
                     sections={sections}
                     selectedMaterias={selectedMaterias}
-                    onlyMonitors={onlyMonitors}
                     onToggleMateria={toggleMateria}
-                    onToggleMonitors={setOnlyMonitors}
                     onApply={handleSearch}
                     onClear={clearFilters}
                     loading={loading}
-                    showClear={!!(search || selectedMaterias.length > 0 || onlyMonitors)}
+                    showClear={!!(search || selectedMaterias.length > 0)}
                 />
             )}
 

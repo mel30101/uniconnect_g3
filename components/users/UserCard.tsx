@@ -4,21 +4,20 @@ import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { User } from "../../types/User";
 
 interface UserCardProps {
-  user: User;
+    user: User;
 }
 
 function UserCard({ user }: UserCardProps) {
     const router = useRouter();
-    
+
     console.log(`Renderizando tarjeta de: ${user.name}`); // Solo para que veas la magia en la consola
 
     return (
-        <TouchableOpacity 
-            style={styles.card} 
+        <TouchableOpacity
+            style={styles.card}
             onPress={() => router.push(`/user/${user.uid}`)}
         >
             <Text style={styles.name}>{user.name}</Text>
-            {user.isMonitor && <Text style={styles.monitor}>Monitor</Text>}
         </TouchableOpacity>
     );
 }

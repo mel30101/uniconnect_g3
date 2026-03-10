@@ -1,19 +1,18 @@
 import { db } from '@/config/firebase';
-import {
-  addDoc,
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
 import axios from 'axios';
+import {
+  addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where,
+} from 'firebase/firestore';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 600000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
+});
 
 export const sendMessage = async (
   chatId: string,
@@ -21,7 +20,7 @@ export const sendMessage = async (
   senderId: string
 ) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
-    type: 'text',          // aquí ya lo marcas
+    type: 'text',
     text,
     senderId,
     createdAt: serverTimestamp(),
@@ -38,54 +37,47 @@ export const sendFileMessage = async (
   senderId: string,
   file: any
 ) => {
+  if (!API_URL) {
+    throw new Error('Backend URL no configurada');
+  }
+
+  const f = file.uri ? file : file.assets?.[0];
+  if (!f || !f.uri) {
+    throw new Error('Objeto de archivo inválido');
+  }
+
+  const uri: string = f.uri;
+  const name: string = f.name || 'archivo_uniconnect';
+  const type: string = f.mimeType || f.type || 'application/octet-stream';
+
+  console.log('Iniciando subida a backend...', { uri, name, type });
+
   try {
     const formData = new FormData();
-    formData.append("senderId", senderId);
-
-    formData.append("file", {
-      uri: file.uri,
-      name: file.name,
-      type: file.mimeType || "application/octet-stream"
+    formData.append('senderId', senderId);
+    formData.append('file', {
+      uri: uri,
+      name: name,
+      type: type,
     } as any);
 
-    const response = await axios.post<{ fileUrl: string; fileName: string }>(
-      `${API_URL}/chat/${chatId}/files`,
+    const response = await api.post<{ fileUrl: string; fileName: string }>(
+      `/api/chat/${chatId}/files`, 
       formData,
       {
         headers: {
-          "Content-Type": "multipart/form-data"
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       }
     );
-
-    const { fileUrl, fileName } = response.data;
-    await addDoc(collection(db, 'chats', chatId, 'messages'), {
-
-      type: "file",
-      senderId,
-      fileName,
-      fileUrl,
-      createdAt: serverTimestamp(),
-    });
-
-    await updateDoc(doc(db, 'chats', chatId), {
-
-      lastMessage: ` ${fileName}`,
-      updatedAt: serverTimestamp(),
-
-    });
+    console.log('Archivo enviado y registrado con éxito');
 
   } catch (error: any) {
-
-    console.error("Error enviando archivo:", error);
-
+    console.error('Error detallado en sendFileMessage:', error);
     if (error.response) {
-      throw new Error(
-        `Error ${error.response.status}: ${error.response.data}`
-      );
+      console.error('Respuesta del servidor:', error.response.data);
     }
-
-    throw new Error("No se pudo subir el archivo");
+    throw new Error('No se pudo subir el archivo al servidor');
   }
 };
 
@@ -95,12 +87,12 @@ export const subscribeToMessages = (chatId: string, callback: Function) => {
     orderBy('createdAt', 'asc')
   );
 
-  return onSnapshot(q, snapshot => {
+  return onSnapshot(q, (snapshot) => {
     const messages = snapshot.docs.map(doc => {
       const data = doc.data() as any;
       return {
         id: doc.id,
-        type: data.type ?? 'text', // aseguro un valor por defecto
+        type: data.type ?? 'text',
         ...data,
       };
     });
@@ -131,14 +123,12 @@ export const getOrCreateChat = async (
   otherUserName?: string
 ) => {
   const chatsRef = collection(db, "chats");
-
   const q = query(
     collection(db, 'chats'),
     where('participants', 'array-contains', currentUserId)
   );
 
   const snapshot = await getDocs(q);
-
   const existingChat = snapshot.docs.find(doc => {
     const participants = doc.data().participants;
     return participants.includes(otherUserId)
@@ -158,5 +148,4 @@ export const getOrCreateChat = async (
     updatedAt: serverTimestamp()
   });
   return chatDoc.id;
-
 };
