@@ -22,6 +22,8 @@ export default function ProfileScreen() {
   const {
     user,
     loading,
+    saving,
+    fetchingStructure,
     isEditing,
     setIsEditing,
     hasProfile,
@@ -37,7 +39,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={UCaldasTheme.dorado} />
+        <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} />
         <Text style={styles.loadingText}>
           Sincronizando con la U de Caldas...
         </Text>
@@ -119,14 +121,23 @@ export default function ProfileScreen() {
                 careers={careers}
                 updateCareer={updateCareer}
                 sections={sections}
+                fetchingStructure={fetchingStructure}
               />
             </View>
           </Collapsible>
 
-          <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-            <Text style={styles.saveText}>
-              {hasProfile ? "Guardar Cambios" : "Finalizar Registro"}
-            </Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]} 
+            onPress={saveProfile}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={UCaldasTheme.azulOscuro} />
+            ) : (
+              <Text style={styles.saveText}>
+                {hasProfile ? "Guardar Cambios" : "Finalizar Registro"}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {hasProfile && (

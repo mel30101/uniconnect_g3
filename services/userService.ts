@@ -1,4 +1,3 @@
-
 export const searchStudents = async (
     name?: string,
     subjectIds?: string[],
@@ -27,6 +26,24 @@ export const searchStudents = async (
     return await response.json();
 };
 
+export const searchGroups = async (name?: string, subjectId?: string, userSubjectIds?: string[]) => {
+    const params = new URLSearchParams();
+    if (name) params.append("search", name);
+    if (subjectId) params.append("subjectId", subjectId);
+    if (userSubjectIds && userSubjectIds.length > 0) {
+        params.append("userSubjectIds", userSubjectIds.join(","));
+    }
+
+    const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/groups?${params.toString()}`
+    );
+
+    if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+    }
+    return await response.json();
+};
+
 export const getSubjects = async () => {
     const response = await fetch(
         `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/subjects`
@@ -41,6 +58,19 @@ export const getCareerStructure = async (careerId: string) => {
 
     if (!response.ok) {
         throw new Error("Error fetching career structure");
+    }
+
+    return await response.json();
+};
+
+export const getUserProfile = async (uid: string) => {
+    const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/academic-profile/${uid}`
+    );
+
+    if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error("Error fetching user profile");
     }
 
     return await response.json();

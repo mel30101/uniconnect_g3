@@ -7,9 +7,9 @@ export const profileStyles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: UCaldasTheme.azulOscuro,
+        backgroundColor: "#f4f6f8",
     },
-    loadingText: { color: "#fff", marginTop: 15, fontWeight: "500" },
+    loadingText: { color: UCaldasTheme.azulOscuro, marginTop: 15, fontWeight: "500" },
     content: { padding: 20 },
     headerCard: {
         backgroundColor: "#fff",
@@ -157,6 +157,14 @@ export const profileStyles = StyleSheet.create({
         color: UCaldasTheme.azulOscuro,
         fontWeight: "bold",
         fontSize: 16,
+    },
+    saveButtonDisabled: {
+        opacity: 0.7,
+    },
+    fetchingContainer: {
+        padding: 20,
+        alignItems: "center",
+        justifyContent: "center",
     },
     cancelLink: { marginTop: 20, alignItems: "center" },
     cancelText: { color: "#666", fontSize: 14 },

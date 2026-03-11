@@ -7,6 +7,8 @@ export const useProfile = () => {
   const setUser = useAuthStore((state) => state.setUser);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [fetchingStructure, setFetchingStructure] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
 
@@ -70,6 +72,7 @@ export const useProfile = () => {
 
         // 2. Cargar materias si ya tiene una carrera asignada (Ej: "422")
         if (data.careerId) {
+          setFetchingStructure(true);
           const structRes = await fetch(
             `${BACKEND_URL}/api/career-structure/${data.careerId}`,
           );
@@ -77,6 +80,7 @@ export const useProfile = () => {
             const structData = await structRes.json();
             setSections(structData);
           }
+          setFetchingStructure(false);
         }
       } else {
         // No hay documento de perfil, forzar edición para onboarding
@@ -97,12 +101,15 @@ export const useProfile = () => {
   // Esta función se llama desde el Picker cuando el usuario cambia de carrera
   const updateCareer = async (id: string) => {
     setProfileData((prev) => ({ ...prev, careerId: id, subjects: [] }));
+    setFetchingStructure(true);
     try {
       const res = await fetch(`${BACKEND_URL}/api/career-structure/${id}`);
       const data = await res.json();
       setSections(data);
     } catch (e) {
       console.error("Error al cambiar carrera:", e);
+    } finally {
+      setFetchingStructure(false);
     }
   };
 
@@ -148,6 +155,7 @@ export const useProfile = () => {
     }
 
     try {
+      setSaving(true);
       const response = await fetch(`${BACKEND_URL}/api/academic-profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,12 +183,16 @@ export const useProfile = () => {
       }
     } catch (e) {
       Alert.alert("Error", "No se pudo guardar el perfil");
+    } finally {
+      setSaving(false);
     }
   };
 
   return {
     user,
     loading,
+    saving,
+    fetchingStructure,
     isEditing,
     setIsEditing,
     hasProfile,

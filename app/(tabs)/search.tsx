@@ -1,41 +1,116 @@
-import { useSearchStudents } from "@/hooks/useSearchStudents";
+import { GroupCard } from "@/components/groups/GroupCard";
+import { FilterSection } from "@/components/search/FilterSection";
+import { useGroups } from "@/hooks/useGroups";
+import { useSearchGroups } from "@/hooks/useSearchGroups";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { FilterSection } from "../../components/search/FilterSection";
-import UserCard from "../../components/users/UserCard";
 import { UCaldasTheme } from "../constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from "react-native";
 
 export default function SearchScreen() {
-    const user = useAuthStore((state) => state.user);
-
-    const { users, sections, loading, performSearch, resetResults, hasCareer } = useSearchStudents(
-        user?.uid,
-        user?.careerId
-    );
+    const { user } = useAuthStore();
+    const { userSubjects } = useGroups();
+    const { groups, loading, performSearch, resetResults } = useSearchGroups();
 
     const [search, setSearch] = useState("");
-    const [selectedMaterias, setSelectedMaterias] = useState<string[]>([]);
-    const [showFilters, setShowFilters] = useState(false); // Empezamos con filtros cerrados para ver resultados generales
+    const [selectedMateria, setSelectedMateria] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    
+    // Ref para evitar que el dropdown se abra justo después de seleccionar un item
+    const isSelectingFromDropdown = useRef(false);
 
-    const handleSearch = () => {
+    // Formatear secciones para el FilterSection
+    const sections = useMemo(() => [
+        {
+            sectionId: "enrolled",
+            sectionName: "Mis Materias Actuales",
+            subjects: userSubjects
+        }
+    ], [userSubjects]);
+
+    useEffect(() => {
+        if (isSelectingFromDropdown.current) {
+            isSelectingFromDropdown.current = false;
+            return;
+        }
+
+        if (search.length >= 3) {
+            setShowDropdown(true);
+            performSearch(search, selectedMateria || undefined, user?.subjects);
+        } else {
+            setShowDropdown(false);
+            if (search.length === 0 && !selectedMateria) {
+                resetResults();
+                setHasSearched(false);
+            }
+        }
+    }, [search, selectedMateria, user?.subjects]);
+
+    const handleSearch = (term?: string) => {
+        const finalTerm = term !== undefined ? term : search;
+        
+        if (finalTerm.trim() === "" && !selectedMateria) {
+            setSearch("");
+            resetResults();
+            setHasSearched(false);
+            setShowDropdown(false);
+            return;
+        }
+
+        if (term !== undefined) {
+            isSelectingFromDropdown.current = true;
+        }
+
+        setSearch(finalTerm);
+        setShowDropdown(false);
         setShowFilters(false);
-        performSearch(search, selectedMaterias);
+        setHasSearched(true);
+        performSearch(finalTerm, selectedMateria || undefined, user?.subjects);
     };
 
     const clearFilters = () => {
         setSearch("");
-        setSelectedMaterias([]);
+        setSelectedMateria(null);
         resetResults();
+        setHasSearched(false);
         setShowFilters(true);
     };
 
     const toggleMateria = (id: string) => {
-        setSelectedMaterias(prev =>
-            prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+        setSelectedMateria(prev => prev === id ? null : id);
+        if (!selectedMateria) setHasSearched(true);
+    };
+
+    // Separar resultados para el dropdown (Filtrar por prefijo de cualquier palabra)
+    const checkMatch = (text: string, query: string) => {
+        if (!text || !query) return false;
+        const searchLower = query.toLowerCase();
+        const searchTerms = searchLower.split(' ').filter(t => t.length > 0);
+        const words = text.toLowerCase().split(' ');
+        
+        return searchTerms.every(term => 
+            words.some(word => word.startsWith(term))
         );
     };
+
+    const groupResults = useMemo(() => {
+        return groups.filter(g => checkMatch(g.name, search)).slice(0, 5);
+    }, [groups, search]);
+
+    const subjectResults = useMemo(() => {
+        const seen = new Set();
+        return groups.filter(g => {
+            const matches = checkMatch(g.subjectName, search);
+            if (matches && !seen.has(g.subjectId)) {
+                seen.add(g.subjectId);
+                return true;
+            }
+            return false;
+        }).slice(0, 5);
+    }, [groups, search]);
 
     return (
         <View style={styles.container}>
@@ -43,11 +118,11 @@ export default function SearchScreen() {
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color="#9ca3af" />
                     <TextInput
-                        placeholder="Buscar por nombre..."
+                        placeholder="Buscar por grupo o materia..."
                         value={search}
                         onChangeText={setSearch}
                         placeholderTextColor="#9ca3af"
-                        onSubmitEditing={handleSearch}
+                        onSubmitEditing={() => handleSearch()}
                         style={styles.input}
                     />
                     {search.length > 0 && (
@@ -69,31 +144,80 @@ export default function SearchScreen() {
                 </TouchableOpacity>
             </View>
 
+            {/* Dropdown de resultados rápidos */}
+            {showDropdown && (groupResults.length > 0 || subjectResults.length > 0) && (
+                <View style={styles.dropdown}>
+                    <ScrollView keyboardShouldPersistTaps="handled">
+                        {groupResults.length > 0 && (
+                            <View>
+                                <Text style={styles.dropdownHeader}>Nombres de Grupo</Text>
+                                {groupResults.map(g => (
+                                    <TouchableOpacity 
+                                        key={`g-${g.id}`} 
+                                        style={styles.dropdownItem}
+                                        onPress={() => handleSearch(g.name)}
+                                    >
+                                        <Ionicons name="people-outline" size={16} color="#6b7280" />
+                                        <Text style={styles.dropdownText}>{g.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                        {subjectResults.length > 0 && (
+                            <View>
+                                <Text style={styles.dropdownHeader}>Grupos por Materia</Text>
+                                {subjectResults.map(g => (
+                                    <TouchableOpacity 
+                                        key={`s-${g.subjectId}`} 
+                                        style={styles.dropdownItem}
+                                        onPress={() => handleSearch(g.subjectName)}
+                                    >
+                                        <Ionicons name="book-outline" size={16} color="#6b7280" />
+                                        <Text style={styles.dropdownText}>{g.subjectName}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </ScrollView>
+                </View>
+            )}
+
             {showFilters && (
                 <FilterSection
                     sections={sections}
-                    selectedMaterias={selectedMaterias}
+                    selectedMaterias={selectedMateria ? [selectedMateria] : []}
                     onToggleMateria={toggleMateria}
-                    onApply={handleSearch}
+                    onApply={() => handleSearch()}
                     onClear={clearFilters}
                     loading={loading}
-                    showClear={!!(search || selectedMaterias.length > 0)}
+                    showClear={!!(search || selectedMateria)}
                 />
             )}
 
             <FlatList
-                data={users}
-                keyExtractor={(item) => item.uid}
-                renderItem={({ item }) => <UserCard user={item} />}
+                data={groups}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <GroupCard group={item} isAdmin={false} />}
                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 30 }}
                 ListEmptyComponent={!loading ? (
                     <View style={styles.emptyContainer}>
-                        {/* Cambiamos el icono y texto para que sea una invitación en lugar de "sin resultados" */}
-                        <Ionicons name="search-circle-outline" size={80} color="#d1d5db" />
-                        <Text style={styles.emptyTitle}>Encuentra compañeros</Text>
-                        <Text style={styles.emptySubtitle}>
-                            Usa la barra de búsqueda o los filtros para empezar.
-                        </Text>
+                        {hasSearched ? (
+                            <>
+                                <Ionicons name="alert-circle-outline" size={80} color="#d1d5db" />
+                                <Text style={styles.emptyTitle}>Sin resultados</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    No encontramos grupos que coincidan con "{search || "la materia seleccionada"}".
+                                </Text>
+                            </>
+                        ) : (
+                            <>
+                                <Ionicons name="people-circle-outline" size={80} color="#d1d5db" />
+                                <Text style={styles.emptyTitle}>Encuentra Grupos de Estudio</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    Busca por nombre de grupo o materia para unirte a una comunidad.
+                                </Text>
+                            </>
+                        )}
                     </View>
                 ) : (
                     <View style={{ marginTop: 20 }}>
@@ -122,4 +246,41 @@ const styles = StyleSheet.create({
     emptyContainer: { alignItems: "center", marginTop: 60, paddingHorizontal: 20 },
     emptyTitle: { fontSize: 18, fontWeight: "bold", marginTop: 15, color: "#374151" },
     emptySubtitle: { fontSize: 14, color: "#6b7280", marginTop: 5, textAlign: "center" },
+    dropdown: {
+        position: 'absolute',
+        top: 105,
+        left: 16,
+        right: 16,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        zIndex: 1000,
+        maxHeight: 300,
+        padding: 8
+    },
+    dropdownHeader: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#9ca3af',
+        textTransform: 'uppercase',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6'
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        gap: 10
+    },
+    dropdownText: {
+        fontSize: 15,
+        color: '#374151'
+    }
 });

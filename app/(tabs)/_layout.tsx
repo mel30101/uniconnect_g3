@@ -1,9 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Image, Text, View } from 'react-native';
-import { UCaldasTheme } from '../constants/Colors'; // Asegúrate de que la ruta sea correcta
+import { UCaldasTheme } from '../constants/Colors';
+import { useEffect } from 'react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { getUserProfile } from '../../services/userService';
 
 export default function TabLayout() {
+  const { user, setUser } = useAuthStore();
+
+  useEffect(() => {
+    const syncProfile = async () => {
+      if (user?.uid && !user.careerId) {
+        try {
+          const profile = await getUserProfile(user.uid);
+          if (profile) {
+            setUser({ ...user, ...profile });
+          }
+        } catch (error) {
+          console.error("Error syncing profile in layout:", error);
+        }
+      }
+    };
+    syncProfile();
+  }, [user?.uid, user?.careerId]);
+
   return (
     <Tabs
       screenOptions={{
