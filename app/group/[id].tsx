@@ -1,84 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar , Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
 import { useGroups } from '../../hooks/useGroups';
 import { styles } from './GroupDetailStyles';
-import { useAuthStore } from '../../store/useAuthStore';    
-import axios from 'axios'; 
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { fetchGroupDetail, loading } = useGroups();
+    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading } = useGroups();
+    
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
     const user = useAuthStore((state) => state.user);
 
+    const isAdmin = group?.members?.some((m: any) => m.id === user?.uid && m.role === 'admin');
+    const isMember = group?.members?.some((m: any) => m.id === user?.uid);
+
     useEffect(() => {
-        if (id) {
-            loadGroupDetail();
-        }
+        if (id) fetchGroupDetail(id).then(data => data && setGroup(data));
     }, [id]);
 
-    const loadGroupDetail = async () => {
-        const data = await fetchGroupDetail(id);
-        if (data) {
-            setGroup(data);
-        }
-    };
+    useEffect(() => {
+        if (isAdmin && id) fetchRequests(id);
+    }, [isAdmin, id]);
 
     const handleJoinRequest = async () => {
-        if (!user) return;
-        
         setSendingRequest(true);
-        try {
-            await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/groups/${id}/requests`, {
-                userId: user.uid, 
-                userName: user.name,
-            });
-            Alert.alert("¡Solicitud enviada!", "El administrador del grupo revisará tu solicitud pronto.");
-            router.back();
-        } catch (error) {
-            Alert.alert("Error", "Hubo un problema al enviar la solicitud. Intenta de nuevo.");
-            console.error(error);
-        } finally {
-            setSendingRequest(false);
-        }
+        const success = await joinGroup(id!);
+        if (success) router.back();
+        setSendingRequest(false);
     };
 
-    if (loading && !group) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} />
-                <Text style={styles.loadingText}>Cargando detalles del grupo...</Text>
-            </View>
-        );
-    }
+    if (loading && !group) return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} />
+            <Text style={styles.loadingText}>Cargando detalles...</Text>
+        </View>
+    );
 
-    if (!group) {
-        return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={60} color="#ccc" />
-                <Text style={styles.errorText}>No se encontró el grupo.</Text>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Text style={styles.backButtonText}>Volver</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
-    // Asegúrate de usar la propiedad correcta (user.uid o user.id) según tu base de datos
-    const isMember = group.members.some((member: any) => member.id === user?.uid);
+    if (!group) return (
+        <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={60} color="#ccc" />
+            <Text style={styles.errorText}>No se encontró el grupo.</Text>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <Text style={styles.backButtonText}>Volver</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
-            <Stack.Screen
-                options={{
-                    headerShown: false
-                }}
-            />
+            <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.headerNav}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backCircle}>
@@ -89,16 +64,13 @@ export default function GroupDetailScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Header Information Box */}
                 <View style={styles.mainInfoCard}>
                     <View style={styles.groupHeader}>
                         <Text style={styles.groupName}>{group.name}</Text>
-
                         <View style={styles.subjectBox}>
                             <Ionicons name="book" size={16} color={UCaldasTheme.dorado} />
                             <Text style={styles.subjectName}>{group.subjectName}</Text>
                         </View>
-
                         <View style={styles.badgeWrapper}>
                             <View style={styles.adminBadge}>
                                 <Ionicons name="shield-checkmark" size={14} color="#fff" />
@@ -108,20 +80,16 @@ export default function GroupDetailScreen() {
                     </View>
                 </View>
 
-                {/* 4. Descripción - Conditional Rendering */}
                 {group.description && group.description.trim().length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
                             <Ionicons name="information-circle-outline" size={20} color={UCaldasTheme.azulOscuro} />
                             <Text style={styles.sectionTitle}>Descripción</Text>
                         </View>
-                        <Text style={styles.description}>
-                            {group.description}
-                        </Text>
+                        <Text style={styles.description}>{group.description}</Text>
                     </View>
                 )}
 
-                {/* 5. Lista de Miembros */}
                 <View style={styles.sectionCard}>
                     <View style={styles.sectionHeader}>
                         <Ionicons name="people-outline" size={20} color={UCaldasTheme.azulOscuro} />
@@ -131,40 +99,51 @@ export default function GroupDetailScreen() {
                         {group.members.map((member: any) => (
                             <View key={member.id} style={styles.memberItem}>
                                 <View style={styles.memberAvatar}>
-                                    <Text style={styles.avatarText}>
-                                        {member.name.charAt(0).toUpperCase()}
-                                    </Text>
+                                    <Text style={styles.avatarText}>{member.name.charAt(0).toUpperCase()}</Text>
                                 </View>
                                 <View style={styles.memberInfo}>
                                     <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberRole}>
-                                        {member.role === 'admin' ? 'Administrador del grupo' : 'Estudiante'}
-                                    </Text>
+                                    <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador del grupo' : 'Estudiante'}</Text>
                                 </View>
                                 {member.role === 'admin' && (
-                                    <View style={styles.starCircle}>
-                                        <Ionicons name="star" size={14} color="#fff" />
-                                    </View>
+                                    <View style={styles.starCircle}><Ionicons name="star" size={14} color="#fff" /></View>
                                 )}
                             </View>
                         ))}
                     </View>
                 </View>
+
+                {isAdmin && requests.length > 0 && (
+                    <View style={styles.sectionCard}>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="notifications-outline" size={20} color={UCaldasTheme.azulOscuro} />
+                            <Text style={styles.sectionTitle}>Solicitudes Pendientes</Text>
+                        </View>
+                        {requests.map((req) => (
+                            <View key={req.id} style={styles.memberItem}>
+                                <View style={styles.memberInfo}>
+                                    <Text style={styles.memberName}>{req.userName}</Text>
+                                    <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={() => processRequest(id!, req.id, 'accepted')}>
+                                            <Text style={styles.actionButtonText}>Aceptar</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336', marginLeft: 10 }]} onPress={() => processRequest(id!, req.id, 'rejected')}>
+                                            <Text style={styles.actionButtonText}>Rechazar</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                )}
             </ScrollView>
+
             {!isMember && (
                 <View style={styles.footerContainer}>
-                    <TouchableOpacity 
-                        style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} 
-                        onPress={handleJoinRequest}
-                        disabled={sendingRequest}
-                    >
-                        {sendingRequest ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <>
-                                <Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text>
-                            </>
+                    <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
+                        {sendingRequest ? <ActivityIndicator color="#fff" /> : (
+                            <><Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                            <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
                         )}
                     </TouchableOpacity>
                 </View>

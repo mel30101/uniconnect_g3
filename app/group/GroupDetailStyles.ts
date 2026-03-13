@@ -2,10 +2,7 @@ import { StyleSheet } from 'react-native';
 import { UCaldasTheme } from '../constants/Colors';
 
 export const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fcfcfc',
-    },
+    container: { flex: 1, backgroundColor: '#fcfcfc' },
     headerNav: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -28,28 +25,10 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
     },
-    headerNavTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: UCaldasTheme.azulOscuro,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-    },
-    loadingText: {
-        marginTop: 12,
-        color: '#666',
-        fontSize: 16,
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
+    headerNavTitle: { fontSize: 18, fontWeight: 'bold', color: UCaldasTheme.azulOscuro },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+    loadingText: { marginTop: 12, color: '#666', fontSize: 16 },
+    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     errorText: {
         fontSize: 18,
         color: '#666',
@@ -62,14 +41,8 @@ export const styles = StyleSheet.create({
         backgroundColor: UCaldasTheme.azulOscuro,
         borderRadius: 8,
     },
-    backButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    scrollContent: {
-        padding: 20,
-        paddingTop: 10,
-    },
+    backButtonText: { color: '#fff', fontWeight: 'bold' },
+    scrollContent: { padding: 20, paddingTop: 10, },
     mainInfoCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
@@ -83,10 +56,7 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 10,
     },
-    groupHeader: {
-        alignItems: 'center',
-        marginTop: 10,
-    },
+    groupHeader: { alignItems: 'center', marginTop: 10 },
     groupName: {
         fontSize: 32,
         fontWeight: '900',
@@ -106,14 +76,8 @@ export const styles = StyleSheet.create({
         marginBottom: 16,
         gap: 8,
     },
-    subjectName: {
-        fontSize: 16,
-        color: UCaldasTheme.dorado,
-        fontWeight: '700',
-    },
-    badgeWrapper: {
-        marginTop: 5,
-    },
+    subjectName: { fontSize: 16, color: UCaldasTheme.dorado, fontWeight: '700' },
+    badgeWrapper: { marginTop: 5 },
     adminBadge: {
         backgroundColor: UCaldasTheme.azulOscuro,
         flexDirection: 'row',
@@ -154,14 +118,8 @@ export const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.8,
     },
-    description: {
-        fontSize: 16,
-        color: '#555',
-        lineHeight: 24,
-    },
-    membersList: {
-        gap: 12,
-    },
+    description: { fontSize: 16, color: '#555', lineHeight: 24 },
+    membersList: { gap: 12 },
     memberItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -180,24 +138,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    avatarText: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: UCaldasTheme.azulOscuro,
-    },
-    memberInfo: {
-        flex: 1,
-    },
-    memberName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#333',
-    },
-    memberRole: {
-        fontSize: 13,
-        color: '#888',
-        marginTop: 2,
-    },
+    avatarText: { fontSize: 20, fontWeight: '800', color: UCaldasTheme.azulOscuro },
+    memberInfo: { flex: 1 },
+    memberName: { fontSize: 16, fontWeight: '700', color: '#333' },
+    memberRole: { fontSize: 13, color: '#888', marginTop: 2 },
     starCircle: {
         width: 24,
         height: 24,
@@ -225,12 +169,17 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    requestButtonDisabled: {
-        backgroundColor: '#999',
+    requestButtonDisabled: { backgroundColor: '#999' },
+    requestButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    actionButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    alignItems: 'center',
     },
-    requestButtonText: {
+    actionButtonText: {
         color: '#fff',
-        fontSize: 16,
         fontWeight: 'bold',
+        fontSize: 12,
     },
 });

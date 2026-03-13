@@ -12,6 +12,7 @@ export const useGroups = () => {
     const [loading, setLoading] = useState(false);
     const [userSubjects, setUserSubjects] = useState<Subject[]>([]);
     const [managedGroups, setManagedGroups] = useState<any[]>([]);
+    const [requests, setRequests] = useState<any[]>([]);
 
     const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -113,12 +114,57 @@ export const useGroups = () => {
         }
     };
 
+    const fetchRequests = useCallback(async (groupId: string) => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/requests`);
+            if (res.ok) setRequests(await res.json());
+        } catch (e) { console.error(e); }
+    }, [BACKEND_URL]);
+
+    const joinGroup = async (groupId: string) => {
+        if (!user) return;
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/requests`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.uid, userName: user.name }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error");
+            Alert.alert("¡Éxito!", "Solicitud enviada.");
+            return true;
+        } catch (e: any) {
+            Alert.alert("Aviso", e.message);
+            return false;
+        }
+    };
+
+    const processRequest = async (groupId: string, requestId: string, status: 'accepted' | 'rejected') => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/requests/${requestId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+            });
+            if (res.ok) {
+                Alert.alert("Éxito", `Solicitud ${status === 'accepted' ? 'aceptada' : 'rechazada'}`);
+                fetchRequests(groupId);
+                return true;
+            }
+        } catch (e) { Alert.alert("Error", "No se pudo procesar"); }
+        return false;
+    };
+
     return {
         createGroup,
         userSubjects,
         managedGroups,
         fetchManagedGroups,
         fetchGroupDetail,
+        fetchRequests,
+        requests,
         loading,
+        joinGroup,
+        processRequest,
     };
 };
