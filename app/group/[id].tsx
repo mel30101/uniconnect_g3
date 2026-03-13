@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar , Alert } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
 import { useGroups } from '../../hooks/useGroups';
 import { styles } from './GroupDetailStyles';
+import { useAuthStore } from '../../store/useAuthStore';    
+import axios from 'axios'; 
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { fetchGroupDetail, loading } = useGroups();
     const [group, setGroup] = useState<any>(null);
+    const [sendingRequest, setSendingRequest] = useState(false);
+    const user = useAuthStore((state) => state.user);
 
     useEffect(() => {
         if (id) {
@@ -21,6 +25,25 @@ export default function GroupDetailScreen() {
         const data = await fetchGroupDetail(id);
         if (data) {
             setGroup(data);
+        }
+    };
+
+    const handleJoinRequest = async () => {
+        if (!user) return;
+        
+        setSendingRequest(true);
+        try {
+            await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/groups/${id}/requests`, {
+                userId: user.uid, 
+                userName: user.name,
+            });
+            Alert.alert("¡Solicitud enviada!", "El administrador del grupo revisará tu solicitud pronto.");
+            router.back();
+        } catch (error) {
+            Alert.alert("Error", "Hubo un problema al enviar la solicitud. Intenta de nuevo.");
+            console.error(error);
+        } finally {
+            setSendingRequest(false);
         }
     };
 
@@ -44,6 +67,9 @@ export default function GroupDetailScreen() {
             </View>
         );
     }
+
+    // Asegúrate de usar la propiedad correcta (user.uid o user.id) según tu base de datos
+    const isMember = group.members.some((member: any) => member.id === user?.uid);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -125,6 +151,24 @@ export default function GroupDetailScreen() {
                     </View>
                 </View>
             </ScrollView>
+            {!isMember && (
+                <View style={styles.footerContainer}>
+                    <TouchableOpacity 
+                        style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} 
+                        onPress={handleJoinRequest}
+                        disabled={sendingRequest}
+                    >
+                        {sendingRequest ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <>
+                                <Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            )}
         </SafeAreaView>
     );
 }

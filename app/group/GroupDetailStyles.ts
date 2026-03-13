@@ -206,4 +206,31 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    footerContainer: {
+        padding: 16,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderColor: '#eee',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 10,
+    },
+    requestButton: {
+        flexDirection: 'row',
+        backgroundColor: UCaldasTheme.azulOscuro,
+        paddingVertical: 14,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    requestButtonDisabled: {
+        backgroundColor: '#999',
+    },
+    requestButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
