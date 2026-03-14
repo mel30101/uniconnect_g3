@@ -3,6 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaVi
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
+import { getOrCreateChat } from '../../services/chatService';
 import { useGroups } from '../../hooks/useGroups';
 import { styles } from './GroupDetailStyles';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -10,7 +11,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading } = useGroups();
-    
+
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
     const user = useAuthStore((state) => state.user);
@@ -72,10 +73,12 @@ export default function GroupDetailScreen() {
                             <Text style={styles.subjectName}>{group.subjectName}</Text>
                         </View>
                         <View style={styles.badgeWrapper}>
-                            <View style={styles.adminBadge}>
-                                <Ionicons name="shield-checkmark" size={14} color="#fff" />
-                                <Text style={styles.adminBadgeText}>Administrador</Text>
-                            </View>
+                            {isAdmin && (
+                                <View style={styles.adminBadge}>
+                                    <Ionicons name="shield-checkmark" size={14} color="#fff" />
+                                    <Text style={styles.adminBadgeText}>Administrador</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </View>
@@ -105,9 +108,22 @@ export default function GroupDetailScreen() {
                                     <Text style={styles.memberName}>{member.name}</Text>
                                     <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador del grupo' : 'Estudiante'}</Text>
                                 </View>
-                                {member.role === 'admin' && (
-                                    <View style={styles.starCircle}><Ionicons name="star" size={14} color="#fff" /></View>
-                                )}
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' }}>
+                                    {member.role === 'admin' && (
+                                        <View style={[styles.starCircle, { marginRight: member.id !== user?.uid ? 10 : 0 }]}><Ionicons name="star" size={14} color="#fff" /></View>
+                                    )}
+                                    {isMember && member.id !== user?.uid && (
+                                        <TouchableOpacity
+                                            onPress={async () => {
+                                                if (!user?.uid || !member.id) return;
+                                                const chatId = await getOrCreateChat(user.uid, member.id, user.name ?? "usuario", member.name);
+                                                router.push({ pathname: "/chat/[chatId]", params: { chatId } });
+                                            }}
+                                        >
+                                            <Ionicons name="chatbubble-ellipses" size={24} color={UCaldasTheme.azulOscuro} />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             </View>
                         ))}
                     </View>
@@ -124,7 +140,12 @@ export default function GroupDetailScreen() {
                                 <View style={styles.memberInfo}>
                                     <Text style={styles.memberName}>{req.userName}</Text>
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={() => processRequest(id!, req.id, 'accepted')}>
+                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={async () => {
+                                            const success = await processRequest(id!, req.id, 'accepted');
+                                            if (success) {
+                                                fetchGroupDetail(id!).then(data => data && setGroup(data));
+                                            }
+                                        }}>
                                             <Text style={styles.actionButtonText}>Aceptar</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336', marginLeft: 10 }]} onPress={() => processRequest(id!, req.id, 'rejected')}>
@@ -143,7 +164,7 @@ export default function GroupDetailScreen() {
                     <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
                         {sendingRequest ? <ActivityIndicator color="#fff" /> : (
                             <><Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                            <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
+                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
                         )}
                     </TouchableOpacity>
                 </View>

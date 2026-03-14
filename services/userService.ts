@@ -26,13 +26,14 @@ export const searchStudents = async (
     return await response.json();
 };
 
-export const searchGroups = async (name?: string, subjectId?: string, userSubjectIds?: string[]) => {
+export const searchGroups = async (name?: string, subjectId?: string, userSubjectIds?: string[], userId?: string) => {
     const params = new URLSearchParams();
     if (name) params.append("search", name);
     if (subjectId) params.append("subjectId", subjectId);
     if (userSubjectIds && userSubjectIds.length > 0) {
         params.append("userSubjectIds", userSubjectIds.join(","));
     }
+    if (userId) params.append("userId", userId);
 
     const response = await fetch(
         `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/groups?${params.toString()}`
