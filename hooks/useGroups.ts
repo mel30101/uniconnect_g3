@@ -13,9 +13,7 @@ export const useGroups = () => {
     const [userSubjects, setUserSubjects] = useState<Subject[]>([]);
     const [managedGroups, setManagedGroups] = useState<any[]>([]);
     const [requests, setRequests] = useState<any[]>([]);
-
     const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-
     const fetchManagedGroups = useCallback(async () => {
         if (!user?.uid) return;
         setLoading(true);
@@ -48,15 +46,12 @@ export const useGroups = () => {
 
     const fetchUserSubjects = useCallback(async () => {
         if (!user?.uid || !user?.careerId) return;
-
         try {
             const res = await fetch(`${BACKEND_URL}/api/career-structure/${user.careerId}`);
             if (!res.ok) throw new Error("Failed to fetch career structure");
 
             const sectionsData = await res.json();
             const profileSubjects = user.subjects || [];
-
-            // Aplanar materias y filtrar por las que el usuario tiene en su perfil
             const allSubjects: Subject[] = [];
             sectionsData.forEach((section: any) => {
                 section.subjects.forEach((sub: any) => {
@@ -65,13 +60,11 @@ export const useGroups = () => {
                     }
                 });
             });
-
             setUserSubjects(allSubjects);
         } catch (e) {
             console.error("Error fetching subjects for groups:", e);
         }
     }, [user?.uid, user?.careerId, user?.subjects, BACKEND_URL]);
-
     useEffect(() => {
         fetchUserSubjects();
     }, [fetchUserSubjects]);
@@ -79,7 +72,6 @@ export const useGroups = () => {
     const createGroup = async (name: string, subjectId: string, description: string) => {
         if (!user?.uid) return;
         setLoading(true);
-
         try {
             const response = await fetch(`${BACKEND_URL}/api/groups`, {
                 method: "POST",
@@ -91,13 +83,10 @@ export const useGroups = () => {
                     creatorId: user.uid,
                 }),
             });
-
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.error || "UNKNOWN_ERROR");
             }
-
             return data;
         } catch (e: any) {
             console.log("Handled creation error:", e.message);
@@ -155,6 +144,26 @@ export const useGroups = () => {
         return false;
     };
 
+    const removeMember = async (groupId: string, userId: string) => {
+    if (!user?.uid) return false;
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/members/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminId: user.uid }), 
+        });
+        if (res.ok) {
+            Alert.alert("Éxito", "Miembro eliminado del grupo.");
+            return true;
+        } else {
+            const data = await res.json();
+            throw new Error(data.error);
+        }
+    } catch (e: any) {
+        Alert.alert("Error", e.message || "No se pudo eliminar al miembro.");
+        return false;
+    }
+};
     return {
         createGroup,
         userSubjects,
@@ -166,5 +175,6 @@ export const useGroups = () => {
         loading,
         joinGroup,
         processRequest,
+        removeMember,
     };
 };

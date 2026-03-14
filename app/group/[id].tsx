@@ -9,8 +9,8 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading } = useGroups();
-    
+    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading , removeMember} = useGroups();
+
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
     const user = useAuthStore((state) => state.user);
@@ -103,16 +103,39 @@ export default function GroupDetailScreen() {
                                 </View>
                                 <View style={styles.memberInfo}>
                                     <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador del grupo' : 'Estudiante'}</Text>
+                                    <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador' : 'Estudiante'}</Text>
                                 </View>
-                                {member.role === 'admin' && (
+
+                                {member.role === 'admin' ? (
                                     <View style={styles.starCircle}><Ionicons name="star" size={14} color="#fff" /></View>
+                                ) : (
+                                    isAdmin && (
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                Alert.alert(
+                                                    "Eliminar miembro",
+                                                    `¿Estás seguro de que quieres eliminar a ${member.name} del grupo?`,
+                                                    [
+                                                        { text: "Cancelar", style: "cancel" },
+                                                        {   text: "Eliminar",
+                                                            style: "destructive",
+                                                            onPress: async () => {
+                                                                const success = await removeMember(id!, member.id);
+                                                                if (success) fetchGroupDetail(id!).then(setGroup); 
+                                                            }
+                                                        }
+                                                    ]
+                                                );
+                                            }}
+                                            style={{ padding: 8 }}>
+                                            <Ionicons name="trash-outline" size={20} color="#F44336" />
+                                        </TouchableOpacity>
+                                    )
                                 )}
                             </View>
                         ))}
                     </View>
                 </View>
-
                 {isAdmin && requests.length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
@@ -143,7 +166,7 @@ export default function GroupDetailScreen() {
                     <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
                         {sendingRequest ? <ActivityIndicator color="#fff" /> : (
                             <><Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                            <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
+                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
                         )}
                     </TouchableOpacity>
                 </View>
