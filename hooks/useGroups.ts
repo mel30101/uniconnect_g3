@@ -12,6 +12,7 @@ export const useGroups = () => {
     const [loading, setLoading] = useState(false);
     const [userSubjects, setUserSubjects] = useState<Subject[]>([]);
     const [managedGroups, setManagedGroups] = useState<any[]>([]);
+    const [memberGroups, setMemberGroups] = useState<any[]>([]);
     const [requests, setRequests] = useState<any[]>([]);
     const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
     const fetchManagedGroups = useCallback(async () => {
@@ -25,6 +26,22 @@ export const useGroups = () => {
             }
         } catch (e) {
             console.error("Error fetching managed groups:", e);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.uid, BACKEND_URL]);
+
+    const fetchMemberGroups = useCallback(async () => {
+        if (!user?.uid) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/user/${user.uid}?role=student`);
+            if (res.ok) {
+                const data = await res.json();
+                setMemberGroups(data);
+            }
+        } catch (e) {
+            console.error("Error fetching member groups:", e);
         } finally {
             setLoading(false);
         }
@@ -144,6 +161,24 @@ export const useGroups = () => {
         return false;
     };
 
+    const transferAdmin = async (groupId: string, newAdminId: string) => {
+        if (!user?.uid) return false;
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/transfer-admin`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: user.uid, newAdminId }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al transferir administración");
+            Alert.alert("¡Éxito!", "Has cedido la administración de este grupo. Ahora volverás a tu lista de grupos.");
+            return true;
+        } catch (e: any) {
+            Alert.alert("Aviso", e.message);
+            return false;
+        }
+    };
+
     const removeMember = async (groupId: string, userId: string) => {
     if (!user?.uid) return false;
     try {
@@ -168,13 +203,16 @@ export const useGroups = () => {
         createGroup,
         userSubjects,
         managedGroups,
+        memberGroups,
         fetchManagedGroups,
+        fetchMemberGroups,
         fetchGroupDetail,
         fetchRequests,
         requests,
         loading,
         joinGroup,
         processRequest,
+        transferAdmin,
         removeMember,
     };
 };

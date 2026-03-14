@@ -3,13 +3,14 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaVi
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
+import { getOrCreateChat } from '../../services/chatService';
 import { useGroups } from '../../hooks/useGroups';
 import { styles } from './GroupDetailStyles';
 import { useAuthStore } from '../../store/useAuthStore';
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading , removeMember} = useGroups();
+    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, transferAdmin, requests, loading, removeMember } = useGroups();
 
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
@@ -64,6 +65,7 @@ export default function GroupDetailScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Header Information Box */}
                 <View style={styles.mainInfoCard}>
                     <View style={styles.groupHeader}>
                         <Text style={styles.groupName}>{group.name}</Text>
@@ -72,14 +74,17 @@ export default function GroupDetailScreen() {
                             <Text style={styles.subjectName}>{group.subjectName}</Text>
                         </View>
                         <View style={styles.badgeWrapper}>
-                            <View style={styles.adminBadge}>
-                                <Ionicons name="shield-checkmark" size={14} color="#fff" />
-                                <Text style={styles.adminBadgeText}>Administrador</Text>
-                            </View>
+                            {isAdmin && (
+                                <View style={styles.adminBadge}>
+                                    <Ionicons name="shield-checkmark" size={14} color="#fff" />
+                                    <Text style={styles.adminBadgeText}>Administrador</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </View>
 
+                {/* Descripción */}
                 {group.description && group.description.trim().length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
@@ -90,6 +95,7 @@ export default function GroupDetailScreen() {
                     </View>
                 )}
 
+                {/* Lista de Miembros */}
                 <View style={styles.sectionCard}>
                     <View style={styles.sectionHeader}>
                         <Ionicons name="people-outline" size={20} color={UCaldasTheme.azulOscuro} />
@@ -106,36 +112,81 @@ export default function GroupDetailScreen() {
                                     <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador' : 'Estudiante'}</Text>
                                 </View>
 
-                                {member.role === 'admin' ? (
-                                    <View style={styles.starCircle}><Ionicons name="star" size={14} color="#fff" /></View>
-                                ) : (
-                                    isAdmin && (
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                Alert.alert(
-                                                    "Eliminar miembro",
-                                                    `¿Estás seguro de que quieres eliminar a ${member.name} del grupo?`,
-                                                    [
-                                                        { text: "Cancelar", style: "cancel" },
-                                                        {   text: "Eliminar",
-                                                            style: "destructive",
-                                                            onPress: async () => {
-                                                                const success = await removeMember(id!, member.id);
-                                                                if (success) fetchGroupDetail(id!).then(setGroup); 
-                                                            }
+                                {/* CONTENEDOR DE ACCIONES: Aquí agrupamos todas las opciones de forma ordenada */}
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
+                                    
+                                    {/* 1. Insignia de Admin */}
+                                    {member.role === 'admin' && (
+                                        <View style={styles.starCircle}>
+                                            <Ionicons name="star" size={14} color="#fff" />
+                                        </View>
+                                    )}
+
+                                    {/* 2. Ceder Cargo (Llave) - Solo admin a otros usuarios */}
+                                    {isAdmin && member.id !== user?.uid && (
+                                        <TouchableOpacity onPress={() => {
+                                            Alert.alert(
+                                                "Ceder cargo",
+                                                `¿Estás seguro de que deseas cederle el cargo de administrador a ${member.name}? Al hacerlo, perderás tus privilegios.`,
+                                                [
+                                                    { text: "Cancelar", style: "cancel" },
+                                                    {
+                                                        text: "Aceptar",
+                                                        style: "destructive",
+                                                        onPress: async () => {
+                                                            if (!id) return;
+                                                            const success = await transferAdmin(id, member.id);
+                                                            if (success) router.back();
                                                         }
-                                                    ]
-                                                );
-                                            }}
-                                            style={{ padding: 8 }}>
-                                            <Ionicons name="trash-outline" size={20} color="#F44336" />
+                                                    }
+                                                ]
+                                            );
+                                        }}>
+                                            <Ionicons name="key-outline" size={22} color={UCaldasTheme.dorado} />
                                         </TouchableOpacity>
-                                    )
-                                )}
+                                    )}
+
+                                    {/* 3. Eliminar Miembro (Basura) - Solo admin a usuarios normales */}
+                                    {isAdmin && member.role !== 'admin' && (
+                                        <TouchableOpacity onPress={() => {
+                                            Alert.alert(
+                                                "Eliminar miembro",
+                                                `¿Estás seguro de que quieres eliminar a ${member.name} del grupo?`,
+                                                [
+                                                    { text: "Cancelar", style: "cancel" },
+                                                    {
+                                                        text: "Eliminar",
+                                                        style: "destructive",
+                                                        onPress: async () => {
+                                                            const success = await removeMember(id!, member.id);
+                                                            if (success) fetchGroupDetail(id!).then(setGroup);
+                                                        }
+                                                    }
+                                                ]
+                                            );
+                                        }}>
+                                            <Ionicons name="trash-outline" size={22} color="#F44336" />
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* 4. Chat Privado (Burbuja) - Cualquier miembro con otro miembro */}
+                                    {isMember && member.id !== user?.uid && (
+                                        <TouchableOpacity onPress={async () => {
+                                            if (!user?.uid || !member.id) return;
+                                            const chatId = await getOrCreateChat(user.uid, member.id, user.name ?? "usuario", member.name);
+                                            router.push({ pathname: "/chat/[chatId]", params: { chatId } });
+                                        }}>
+                                            <Ionicons name="chatbubble-ellipses" size={24} color={UCaldasTheme.azulOscuro} />
+                                        </TouchableOpacity>
+                                    )}
+
+                                </View>
                             </View>
                         ))}
                     </View>
                 </View>
+
+                {/* Solicitudes Pendientes */}
                 {isAdmin && requests.length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
@@ -147,7 +198,10 @@ export default function GroupDetailScreen() {
                                 <View style={styles.memberInfo}>
                                     <Text style={styles.memberName}>{req.userName}</Text>
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={() => processRequest(id!, req.id, 'accepted')}>
+                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={async () => {
+                                            const success = await processRequest(id!, req.id, 'accepted');
+                                            if (success) fetchGroupDetail(id!).then(data => data && setGroup(data));
+                                        }}>
                                             <Text style={styles.actionButtonText}>Aceptar</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336', marginLeft: 10 }]} onPress={() => processRequest(id!, req.id, 'rejected')}>
@@ -161,12 +215,15 @@ export default function GroupDetailScreen() {
                 )}
             </ScrollView>
 
+            {/* Footer - Solicitar Unión */}
             {!isMember && (
                 <View style={styles.footerContainer}>
                     <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
                         {sendingRequest ? <ActivityIndicator color="#fff" /> : (
-                            <><Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text></>
+                            <>
+                                <Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text>
+                            </>
                         )}
                     </TouchableOpacity>
                 </View>

@@ -9,6 +9,7 @@ interface GroupCardProps {
         id: string;
         name: string;
         subjectName: string;
+        adminName?: string;
     };
     isAdmin?: boolean;
 }
@@ -23,6 +24,11 @@ export const GroupCard = ({ group, isAdmin = true }: GroupCardProps) => {
                 <View style={styles.titleInfo}>
                     <Text style={styles.groupName}>{group.name}</Text>
                     <Text style={styles.subjectName}>{group.subjectName}</Text>
+                    {group.adminName && (
+                        <Text style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                            <Ionicons name="person-outline" size={13} color="#666" /> Admin: {group.adminName}
+                        </Text>
+                    )}
                 </View>
                 {isAdmin && (
                     <View style={styles.adminBadge}>

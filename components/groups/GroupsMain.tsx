@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { UCaldasTheme } from '../../app/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { groupsStyles as styles } from './GroupsStyles';
@@ -10,13 +11,17 @@ import { useGroups } from '../../hooks/useGroups';
 export default function GroupsMain() {
     const [activeTab, setActiveTab] = useState<'miembro' | 'admin'>('miembro');
     const [modalVisible, setModalVisible] = useState(false);
-    const { managedGroups, fetchManagedGroups, loading } = useGroups();
+    const { managedGroups, memberGroups, fetchManagedGroups, fetchMemberGroups, loading } = useGroups();
 
-    useEffect(() => {
-        if (activeTab === 'admin') {
-            fetchManagedGroups();
-        }
-    }, [activeTab, fetchManagedGroups]);
+    useFocusEffect(
+        useCallback(() => {
+            if (activeTab === 'admin') {
+                fetchManagedGroups();
+            } else if (activeTab === 'miembro') {
+                fetchMemberGroups();
+            }
+        }, [activeTab, fetchManagedGroups, fetchMemberGroups])
+    );
 
     return (
         <View style={styles.container}>
@@ -42,12 +47,31 @@ export default function GroupsMain() {
 
             <ScrollView contentContainerStyle={styles.content}>
                 {activeTab === 'miembro' ? (
-                    <View style={styles.placeholderContainer}>
-                        <Ionicons name="people-outline" size={80} color={UCaldasTheme.azulOscuro} />
-                        <Text style={styles.placeholderTitle}>Grupos seguidos</Text>
-                        <Text style={styles.placeholderSubtitle}>
-                            Aquí verás las comunidades de estudio a las que perteneces.
-                        </Text>
+                    <View style={styles.adminContainer}>
+                        <View style={styles.tabHeader}>
+                            <Text style={styles.placeholderTitle}>Mis Grupos</Text>
+                            <Text style={styles.placeholderSubtitle}>
+                                Comunidades de estudio a las que perteneces.
+                            </Text>
+                        </View>
+
+                        {loading ? (
+                            <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} style={{ marginTop: 40 }} />
+                        ) : memberGroups.length > 0 ? (
+                            <View style={{ marginTop: 10 }}>
+                                {memberGroups.map((group) => (
+                                    <GroupCard key={group.id} group={group} isAdmin={false} />
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.placeholderContainer}>
+                                <Ionicons name="people-outline" size={80} color={UCaldasTheme.azulOscuro} />
+                                <Text style={styles.placeholderTitle}>Grupos seguidos</Text>
+                                <Text style={styles.placeholderSubtitle}>
+                                    Aquí verás las comunidades de estudio a las que perteneces.
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 ) : (
                     <View style={styles.adminContainer}>
