@@ -172,6 +172,24 @@ export const useGroups = () => {
         return false;
     };
 
+    const transferAdmin = async (groupId: string, newAdminId: string) => {
+        if (!user?.uid) return false;
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/transfer-admin`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId: user.uid, newAdminId }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al transferir administración");
+            Alert.alert("¡Éxito!", "Has cedido la administración de este grupo. Ahora volverás a tu lista de grupos.");
+            return true;
+        } catch (e: any) {
+            Alert.alert("Aviso", e.message);
+            return false;
+        }
+    };
+
     return {
         createGroup,
         userSubjects,
@@ -185,5 +203,6 @@ export const useGroups = () => {
         loading,
         joinGroup,
         processRequest,
+        transferAdmin,
     };
 };

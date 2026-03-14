@@ -10,7 +10,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, requests, loading } = useGroups();
+    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, transferAdmin, requests, loading } = useGroups();
 
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
@@ -111,6 +111,31 @@ export default function GroupDetailScreen() {
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' }}>
                                     {member.role === 'admin' && (
                                         <View style={[styles.starCircle, { marginRight: member.id !== user?.uid ? 10 : 0 }]}><Ionicons name="star" size={14} color="#fff" /></View>
+                                    )}
+                                    {isAdmin && member.id !== user?.uid && (
+                                        <TouchableOpacity
+                                            style={{ marginRight: 15 }}
+                                            onPress={() => {
+                                                Alert.alert(
+                                                    "Ceder cargo",
+                                                    `¿Estás seguro de que deseas cederle el cargo de administrador a ${member.name}? Al hacerlo, abandonarás este grupo permanentemente.`,
+                                                    [
+                                                        { text: "Cancelar", style: "cancel" },
+                                                        { 
+                                                            text: "Aceptar", 
+                                                            style: "destructive",
+                                                            onPress: async () => {
+                                                                if (!id) return;
+                                                                const success = await transferAdmin(id, member.id);
+                                                                if (success) router.back();
+                                                            }
+                                                        }
+                                                    ]
+                                                );
+                                            }}
+                                        >
+                                            <Ionicons name="key-outline" size={24} color={UCaldasTheme.dorado} />
+                                        </TouchableOpacity>
                                     )}
                                     {isMember && member.id !== user?.uid && (
                                         <TouchableOpacity
