@@ -182,20 +182,66 @@ export const useGroups = () => {
     const removeMember = async (groupId: string, userId: string) => {
     if (!user?.uid) return false;
     try {
-        const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/members/${userId}`, {
+        const url = `${BACKEND_URL}/api/groups/${groupId}/members/${userId}?adminId=${user.uid}`;
+        
+        const res = await fetch(url, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminId: user.uid }), 
+            headers: { 'Content-Type': 'application/json' }
         });
+
+        const data = await res.json();
         if (res.ok) {
-            Alert.alert("Éxito", "Miembro eliminado del grupo.");
+            Alert.alert("Éxito", "Miembro eliminado.");
             return true;
         } else {
-            const data = await res.json();
-            throw new Error(data.error);
+            Alert.alert("Error", data.error || "No se pudo eliminar al miembro.");
+            return false;
         }
     } catch (e: any) {
-        Alert.alert("Error", e.message || "No se pudo eliminar al miembro.");
+        console.error(e);
+        Alert.alert("Error", "Problema de conexión al eliminar.");
+        return false;
+    }
+};
+
+const [availableStudents, setAvailableStudents] = useState([]);
+const fetchAvailableStudents = async (groupId: string, subjectId: string, search: string = '') => {
+    const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/available-students?subjectId=${subjectId}&search=${search}`);
+    const data = await res.json();
+    setAvailableStudents(data);
+};
+const addMemberToGroup = async (groupId: string, userId: string) => {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/members`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: userId,
+                role: 'student' 
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        return res.ok;
+    } catch (e) {
+        console.error("Error al añadir miembro:", e);
+        return false;
+    }
+};
+
+const leaveGroup = async (groupId: string, userId: string) => {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/groups/${groupId}/leave/${userId}`, {
+            method: 'DELETE',
+        });
+        
+        if (res.ok) {
+            Alert.alert("Éxito", "Has salido del grupo.");
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error(e);
         return false;
     }
 };
@@ -214,5 +260,10 @@ export const useGroups = () => {
         processRequest,
         transferAdmin,
         removeMember,
+        addMemberToGroup,
+        availableStudents,
+        fetchAvailableStudents,
+        setAvailableStudents,
+        leaveGroup,
     };
 };

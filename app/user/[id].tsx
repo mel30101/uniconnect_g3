@@ -47,8 +47,6 @@ export default function ExternalProfileScreen() {
                 </View>
 
                 <Text style={styles.name}>{user.userName}</Text>
-                {/* La carrera ahora se muestra en la sección de Información Académica */}
-
                 {user.showEmail && (
                     <Text style={styles.emailText}>{user.email}</Text>
                 )}

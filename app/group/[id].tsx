@@ -1,46 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert, Modal, TextInput, FlatList } from 'react-native';
+import { useLocalSearchParams, router, Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
 import { getOrCreateChat } from '../../services/chatService';
 import { useGroups } from '../../hooks/useGroups';
 import { styles } from './GroupDetailStyles';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSearchStudents } from "@/hooks/useSearchStudents";
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, transferAdmin, requests, loading, removeMember } = useGroups();
-
     const [group, setGroup] = useState<any>(null);
     const [sendingRequest, setSendingRequest] = useState(false);
     const user = useAuthStore((state) => state.user);
-
     const isAdmin = group?.members?.some((m: any) => m.id === user?.uid && m.role === 'admin');
     const isMember = group?.members?.some((m: any) => m.id === user?.uid);
-
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const { addMemberToGroup } = useGroups();
+    const router = useRouter();
+    const { leaveGroup } = useGroups()
+    const {
+        users: availableStudents,
+        loading: searchLoading,
+        performSearch
+    } = useSearchStudents(user?.uid);
     useEffect(() => {
         if (id) fetchGroupDetail(id).then(data => data && setGroup(data));
     }, [id]);
-
     useEffect(() => {
         if (isAdmin && id) fetchRequests(id);
     }, [isAdmin, id]);
-
+    useEffect(() => {
+        if (showAddModal && group?.subjectId) {
+            performSearch("", [group.subjectId]);
+        }
+    }, [showAddModal, group?.subjectId]);
     const handleJoinRequest = async () => {
         setSendingRequest(true);
         const success = await joinGroup(id!);
         if (success) router.back();
         setSendingRequest(false);
     };
-
     if (loading && !group) return (
         <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} />
             <Text style={styles.loadingText}>Cargando detalles...</Text>
         </View>
     );
-
     if (!group) return (
         <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={60} color="#ccc" />
@@ -50,12 +59,10 @@ export default function GroupDetailScreen() {
             </TouchableOpacity>
         </View>
     );
-
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
             <Stack.Screen options={{ headerShown: false }} />
-
             <View style={styles.headerNav}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backCircle}>
                     <Ionicons name="arrow-back" size={24} color={UCaldasTheme.azulOscuro} />
@@ -63,9 +70,7 @@ export default function GroupDetailScreen() {
                 <Text style={styles.headerNavTitle}>Detalles del Grupo</Text>
                 <View style={{ width: 45 }} />
             </View>
-
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Header Information Box */}
                 <View style={styles.mainInfoCard}>
                     <View style={styles.groupHeader}>
                         <Text style={styles.groupName}>{group.name}</Text>
@@ -83,8 +88,6 @@ export default function GroupDetailScreen() {
                         </View>
                     </View>
                 </View>
-
-                {/* Descripción */}
                 {group.description && group.description.trim().length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
@@ -94,8 +97,6 @@ export default function GroupDetailScreen() {
                         <Text style={styles.description}>{group.description}</Text>
                     </View>
                 )}
-
-                {/* Lista de Miembros */}
                 <View style={styles.sectionCard}>
                     <View style={styles.sectionHeader}>
                         <Ionicons name="people-outline" size={20} color={UCaldasTheme.azulOscuro} />
@@ -111,18 +112,14 @@ export default function GroupDetailScreen() {
                                     <Text style={styles.memberName}>{member.name}</Text>
                                     <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador' : 'Estudiante'}</Text>
                                 </View>
-
-                                {/* CONTENEDOR DE ACCIONES: Aquí agrupamos todas las opciones de forma ordenada */}
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-                                    
+
                                     {/* 1. Insignia de Admin */}
                                     {member.role === 'admin' && (
                                         <View style={styles.starCircle}>
                                             <Ionicons name="star" size={14} color="#fff" />
                                         </View>
                                     )}
-
-                                    {/* 2. Ceder Cargo (Llave) - Solo admin a otros usuarios */}
                                     {isAdmin && member.id !== user?.uid && (
                                         <TouchableOpacity onPress={() => {
                                             Alert.alert(
@@ -145,8 +142,6 @@ export default function GroupDetailScreen() {
                                             <Ionicons name="key-outline" size={22} color={UCaldasTheme.dorado} />
                                         </TouchableOpacity>
                                     )}
-
-                                    {/* 3. Eliminar Miembro (Basura) - Solo admin a usuarios normales */}
                                     {isAdmin && member.role !== 'admin' && (
                                         <TouchableOpacity onPress={() => {
                                             Alert.alert(
@@ -168,8 +163,6 @@ export default function GroupDetailScreen() {
                                             <Ionicons name="trash-outline" size={22} color="#F44336" />
                                         </TouchableOpacity>
                                     )}
-
-                                    {/* 4. Chat Privado (Burbuja) - Cualquier miembro con otro miembro */}
                                     {isMember && member.id !== user?.uid && (
                                         <TouchableOpacity onPress={async () => {
                                             if (!user?.uid || !member.id) return;
@@ -185,8 +178,6 @@ export default function GroupDetailScreen() {
                         ))}
                     </View>
                 </View>
-
-                {/* Solicitudes Pendientes */}
                 {isAdmin && requests.length > 0 && (
                     <View style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
@@ -195,8 +186,22 @@ export default function GroupDetailScreen() {
                         </View>
                         {requests.map((req) => (
                             <View key={req.id} style={styles.memberItem}>
+
                                 <View style={styles.memberInfo}>
-                                    <Text style={styles.memberName}>{req.userName}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            router.push({
+                                                // Definimos la ruta hacia el perfil del tercero
+                                                pathname: "/group/member-profile/[userId]",
+                                                params: { userId: req.userId, userName: req.userName }
+                                            });
+                                        }}
+                                    >
+                                        <Text style={{ fontWeight: 'bold', color: UCaldasTheme.azulOscuro, textDecorationLine: 'underline' }}>
+                                            {req.userName}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.memberName}></Text>
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
                                         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={async () => {
                                             const success = await processRequest(id!, req.id, 'accepted');
@@ -213,9 +218,108 @@ export default function GroupDetailScreen() {
                         ))}
                     </View>
                 )}
-            </ScrollView>
+                {isMember && !isAdmin && (
+                    <TouchableOpacity
+                        style={styles.leaveButton}
+                        onPress={() => {
+                            Alert.alert(
+                                "Salir del grupo",
+                                "¿Estás seguro de que quieres salir de este grupo de estudio?",
+                                [
+                                    { text: "Cancelar", style: "cancel" },
+                                    {
+                                        text: "Sí, salir",
+                                        style: "destructive",
+                                        onPress: async () => {
+                                            const success = await leaveGroup(id!, user!.uid);
+                                            if (success) {
+                                                router.replace('/(tabs)/home');
+                                            }
+                                        }
+                                    }
+                                ]
+                            );
+                        }}
+                    >
+                        <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Salirme del grupo</Text>
+                    </TouchableOpacity>
+                )}
 
-            {/* Footer - Solicitar Unión */}
+                {isAdmin && (
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#4CAF50', marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
+                        onPress={() => setShowAddModal(true)}
+                    >
+                        <Text style={{ color: '#fff', fontWeight: 'bold', marginRight: 8 }}>Añadir miembro</Text>
+                        <Ionicons name="add-circle" size={20} color="#fff" />
+                    </TouchableOpacity>
+                )}
+
+                < Modal visible={showAddModal} animationType="slide" >
+                    <SafeAreaView style={{ flex: 1, padding: 20 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                            <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                                <Ionicons name="close" size={28} color={UCaldasTheme.azulOscuro} />
+                            </TouchableOpacity>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 15 }}>Buscar Compañeros</Text>
+                        </View>
+
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Buscar por nombre..."
+                            value={searchQuery}
+                            onChangeText={(text) => {
+                                setSearchQuery(text);
+                                performSearch(text, [group.subjectId]);
+                            }}
+                        />
+
+                        <FlatList
+                            data={availableStudents}
+                            keyExtractor={(item) => item.uid}
+                            renderItem={({ item }) => {
+                                const isAlreadyInGroup = group?.members?.some((m: any) => m.id === item.uid);
+
+                                return (
+                                    <View style={[styles.memberItem, { opacity: isAlreadyInGroup ? 0.6 : 1 }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ fontWeight: '600', fontSize: 16 }}>{item.name}</Text>
+                                            {isAlreadyInGroup && (
+                                                <Text style={{ color: '#666', fontSize: 12, fontStyle: 'italic' }}>
+                                                    Ya es miembro
+                                                </Text>
+                                            )}
+                                        </View>
+
+                                        <TouchableOpacity
+                                            disabled={isAlreadyInGroup}
+                                            onPress={async () => {
+                                                const success = await addMemberToGroup(id!, item.uid);
+                                                if (success) {
+                                                    Alert.alert("Éxito", "Estudiante añadido");
+                                                    fetchGroupDetail(id!).then(setGroup);
+                                                    setShowAddModal(false);
+                                                }
+                                            }}
+                                            style={{
+                                                backgroundColor: isAlreadyInGroup ? '#BDBDBD' : UCaldasTheme.azulOscuro,
+                                                paddingVertical: 8,
+                                                paddingHorizontal: 15,
+                                                borderRadius: 5
+                                            }}
+                                        >
+                                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                                                {isAlreadyInGroup ? "Miembro" : "Añadir"}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                );
+                            }}
+                        />
+                    </SafeAreaView>
+                </Modal >
+            </ScrollView >
             {!isMember && (
                 <View style={styles.footerContainer}>
                     <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
@@ -227,7 +331,8 @@ export default function GroupDetailScreen() {
                         )}
                     </TouchableOpacity>
                 </View>
-            )}
-        </SafeAreaView>
+            )
+            }
+        </SafeAreaView >
     );
 }

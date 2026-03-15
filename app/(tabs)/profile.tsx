@@ -2,16 +2,8 @@ import { Collapsible } from "@/components/Collapsible";
 import { useProfile } from "@/hooks/useProfile";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { UCaldasTheme } from "../constants/Colors";
-
-// Nuevos componentes modulares
 import { profileStyles as styles } from "@/components/profile/ProfileStyles";
 import { ProfileInfoRead } from "@/components/profile/ProfileInfoRead";
 import { ProfileAcademicRead } from "@/components/profile/ProfileAcademicRead";
@@ -35,7 +27,6 @@ export default function ProfileScreen() {
     saveProfile,
   } = useProfile();
 
-  // Pantalla de carga con identidad visual de la Universidad
   if (loading) {
     return (
       <View style={styles.loadingContainer}>

@@ -29,18 +29,8 @@ export const styles = StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
     loadingText: { marginTop: 12, color: '#666', fontSize: 16 },
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    errorText: {
-        fontSize: 18,
-        color: '#666',
-        marginTop: 10,
-        marginBottom: 20,
-    },
-    backButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: UCaldasTheme.azulOscuro,
-        borderRadius: 8,
-    },
+    errorText: { fontSize: 18, color: '#666', marginTop: 10, marginBottom: 20, textAlign: 'center' },
+    backButton: { paddingVertical: 10, paddingHorizontal: 20, backgroundColor: UCaldasTheme.azulOscuro, borderRadius: 8},
     backButtonText: { color: '#fff', fontWeight: 'bold' },
     scrollContent: { padding: 20, paddingTop: 10, },
     mainInfoCard: {
@@ -171,15 +161,37 @@ export const styles = StyleSheet.create({
     },
     requestButtonDisabled: { backgroundColor: '#999' },
     requestButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 15,
-    borderRadius: 6,
-    alignItems: 'center',
+    actionButton: { paddingVertical: 6, paddingHorizontal: 15, borderRadius: 6, alignItems: 'center' },
+    actionButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+    addMemberBtn: {
+        backgroundColor: '#4CAF50',
+        padding: 15,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 15,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        elevation: 5,
     },
-    actionButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 12,
+    searchInput: {
+        backgroundColor: '#f0f0f0',
+        padding: 12,
+        borderRadius: 10,
+        marginBottom: 15,
+        fontSize: 16,
+        color: '#333',
     },
+    leaveButton: {
+        backgroundColor: '#FF3B30',
+        padding: 15,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 30,
+        marginBottom: 20
+    }
 });
