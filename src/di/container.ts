@@ -1,0 +1,85 @@
+// === Repositorios ===
+import { ApiGroupRepository } from '../data/repositories/ApiGroupRepository';
+import { FirestoreChatRepository } from '../data/repositories/FirestoreChatRepository';
+import { ApiProfileRepository } from '../data/repositories/ApiProfileRepository';
+import { ApiSearchRepository } from '../data/repositories/ApiSearchRepository';
+import { ApiEventRepository } from '../data/repositories/ApiEventRepository';
+import { ApiAcademicRepository } from '../data/repositories/ApiAcademicRepository';
+
+// === Use Cases: Group ===
+import { CreateGroup } from '../application/use-cases/group/CreateGroup';
+import { GetUserGroups } from '../application/use-cases/group/GetUserGroups';
+import { GetGroupDetail } from '../application/use-cases/group/GetGroupDetail';
+import { JoinGroup } from '../application/use-cases/group/JoinGroup';
+import { ProcessRequest } from '../application/use-cases/group/ProcessRequest';
+import { TransferAdmin } from '../application/use-cases/group/TransferAdmin';
+import { RemoveMember } from '../application/use-cases/group/RemoveMember';
+import { AddMember } from '../application/use-cases/group/AddMember';
+import { LeaveGroup } from '../application/use-cases/group/LeaveGroup';
+import { GetAvailableStudents } from '../application/use-cases/group/GetAvailableStudents';
+
+// === Use Cases: Chat ===
+import { SendMessage } from '../application/use-cases/chat/SendMessage';
+import { SendFileMessage } from '../application/use-cases/chat/SendFileMessage';
+import { GetOrCreateChat } from '../application/use-cases/chat/GetOrCreateChat';
+
+// === Use Cases: Profile ===
+import { GetProfile } from '../application/use-cases/profile/GetProfile';
+import { SaveProfile } from '../application/use-cases/profile/SaveProfile';
+
+// === Use Cases: Search ===
+import { SearchStudents } from '../application/use-cases/search/SearchStudents';
+import { SearchGroups } from '../application/use-cases/search/SearchGroups';
+
+// === Use Cases: Event ===
+import { GetEvents } from '../application/use-cases/event/GetEvents';
+
+// === Use Cases: Academic ===
+import { GetCareers } from '../application/use-cases/academic/GetCareers';
+import { GetCareerStructure } from '../application/use-cases/academic/GetCareerStructure';
+import { GetSubjects } from '../application/use-cases/academic/GetSubjects';
+
+// ─── Instancias de Repositorios ─────────────────────────────────────
+const groupRepo = new ApiGroupRepository();
+const chatRepo = new FirestoreChatRepository();
+const profileRepo = new ApiProfileRepository();
+const searchRepo = new ApiSearchRepository();
+const eventRepo = new ApiEventRepository();
+const academicRepo = new ApiAcademicRepository();
+
+// ─── Instancias de Use Cases ────────────────────────────────────────
+// Group
+export const createGroup = new CreateGroup(groupRepo);
+export const getUserGroups = new GetUserGroups(groupRepo);
+export const getGroupDetail = new GetGroupDetail(groupRepo);
+export const joinGroup = new JoinGroup(groupRepo);
+export const processRequest = new ProcessRequest(groupRepo);
+export const transferAdmin = new TransferAdmin(groupRepo);
+export const removeMember = new RemoveMember(groupRepo);
+export const addMember = new AddMember(groupRepo);
+export const leaveGroup = new LeaveGroup(groupRepo);
+export const getAvailableStudents = new GetAvailableStudents(groupRepo);
+
+// Chat
+export const sendMessage = new SendMessage(chatRepo);
+export const sendFileMessage = new SendFileMessage(chatRepo);
+export const getOrCreateChat = new GetOrCreateChat(chatRepo);
+
+// Profile
+export const getProfile = new GetProfile(profileRepo, academicRepo);
+export const saveProfile = new SaveProfile(profileRepo);
+
+// Search
+export const searchStudents = new SearchStudents(searchRepo);
+export const searchGroups = new SearchGroups(searchRepo);
+
+// Event
+export const getEvents = new GetEvents(eventRepo);
+
+// Academic
+export const getCareers = new GetCareers(academicRepo);
+export const getCareerStructure = new GetCareerStructure(academicRepo);
+export const getSubjects = new GetSubjects(academicRepo);
+
+// Re-export del chat repo para suscripciones directas en hooks
+export { chatRepo };

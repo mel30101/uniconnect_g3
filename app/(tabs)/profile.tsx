@@ -1,14 +1,14 @@
-import { Collapsible } from "@/components/Collapsible";
-import { useProfile } from "@/hooks/useProfile";
+import { Collapsible } from "@/src/presentation/components/common/Collapsible";
+import { useProfile } from "@/src/presentation/hooks/useProfile";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { UCaldasTheme } from "../constants/Colors";
-import { profileStyles as styles } from "@/components/profile/ProfileStyles";
-import { ProfileInfoRead } from "@/components/profile/ProfileInfoRead";
-import { ProfileAcademicRead } from "@/components/profile/ProfileAcademicRead";
-import { ProfileInfoEdit } from "@/components/profile/ProfileInfoEdit";
-import { ProfileAcademicEdit } from "@/components/profile/ProfileAcademicEdit";
+import { profileStyles as styles } from "@/src/presentation/components/profile/ProfileStyles";
+import { ProfileInfoRead } from "@/src/presentation/components/profile/ProfileInfoRead";
+import { ProfileAcademicRead } from "@/src/presentation/components/profile/ProfileAcademicRead";
+import { ProfileInfoEdit } from "@/src/presentation/components/profile/ProfileInfoEdit";
+import { ProfileAcademicEdit } from "@/src/presentation/components/profile/ProfileAcademicEdit";
 
 export default function ProfileScreen() {
   const {

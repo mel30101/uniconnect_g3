@@ -1,8 +1,8 @@
-import { GroupCard } from "@/components/groups/GroupCard";
-import { FilterSection } from "@/components/search/FilterSection";
-import { useGroups } from "@/hooks/useGroups";
-import { useSearchGroups } from "@/hooks/useSearchGroups";
-import { useAuthStore } from "@/store/useAuthStore";
+import { GroupCard } from "@/src/presentation/components/groups/GroupCard";
+import { FilterSection } from "@/src/presentation/components/search/FilterSection";
+import { useGroups } from "@/src/presentation/hooks/useGroups";
+import { useSearchGroups } from "@/src/presentation/hooks/useSearchGroups";
+import { useAuthStore } from "@/src/presentation/store/useAuthStore";
 import { UCaldasTheme } from "../constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -19,10 +19,8 @@ export default function SearchScreen() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     
-    // Ref para evitar que el dropdown se abra justo después de seleccionar un item
     const isSelectingFromDropdown = useRef(false);
 
-    // Formatear secciones para el FilterSection
     const sections = useMemo(() => [
         {
             sectionId: "enrolled",
@@ -84,7 +82,6 @@ export default function SearchScreen() {
         if (!selectedMateria) setHasSearched(true);
     };
 
-    // Separar resultados para el dropdown (Filtrar por prefijo de cualquier palabra)
     const checkMatch = (text: string, query: string) => {
         if (!text || !query) return false;
         const searchLower = query.toLowerCase();
@@ -103,7 +100,7 @@ export default function SearchScreen() {
     const subjectResults = useMemo(() => {
         const seen = new Set();
         return groups.filter(g => {
-            const matches = checkMatch(g.subjectName, search);
+            const matches = checkMatch(g.subjectName || '', search);
             if (matches && !seen.has(g.subjectId)) {
                 seen.add(g.subjectId);
                 return true;
@@ -144,7 +141,6 @@ export default function SearchScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Dropdown de resultados rápidos */}
             {showDropdown && (groupResults.length > 0 || subjectResults.length > 0) && (
                 <View style={styles.dropdown}>
                     <ScrollView keyboardShouldPersistTaps="handled">
@@ -170,7 +166,7 @@ export default function SearchScreen() {
                                     <TouchableOpacity 
                                         key={`s-${g.subjectId}`} 
                                         style={styles.dropdownItem}
-                                        onPress={() => handleSearch(g.subjectName)}
+                                        onPress={() => handleSearch(g.subjectName || '')}
                                     >
                                         <Ionicons name="book-outline" size={16} color="#6b7280" />
                                         <Text style={styles.dropdownText}>{g.subjectName}</Text>
@@ -247,40 +243,19 @@ const styles = StyleSheet.create({
     emptyTitle: { fontSize: 18, fontWeight: "bold", marginTop: 15, color: "#374151" },
     emptySubtitle: { fontSize: 14, color: "#6b7280", marginTop: 5, textAlign: "center" },
     dropdown: {
-        position: 'absolute',
-        top: 105,
-        left: 16,
-        right: 16,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        zIndex: 1000,
-        maxHeight: 300,
-        padding: 8
+        position: 'absolute', top: 105, left: 16, right: 16,
+        backgroundColor: '#fff', borderRadius: 12, elevation: 5,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2, shadowRadius: 5, zIndex: 1000, maxHeight: 300, padding: 8
     },
     dropdownHeader: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: '#9ca3af',
-        textTransform: 'uppercase',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6'
+        fontSize: 12, fontWeight: 'bold', color: '#9ca3af',
+        textTransform: 'uppercase', paddingHorizontal: 12, paddingVertical: 8,
+        borderBottomWidth: 1, borderBottomColor: '#f3f4f6'
     },
     dropdownItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        gap: 10
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: 12, paddingHorizontal: 12, gap: 10
     },
-    dropdownText: {
-        fontSize: 15,
-        color: '#374151'
-    }
+    dropdownText: { fontSize: 15, color: '#374151' }
 });

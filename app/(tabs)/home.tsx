@@ -1,36 +1,18 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { EventCard } from '../../components/EventCard';
-import { useAuthStore } from '../../store/useAuthStore';
-import { getValidSortedEvents } from '../../utils/dateUtils';
+import { EventCard } from '@/src/presentation/components/common/EventCard';
+import { useAuthStore } from '@/src/presentation/store/useAuthStore';
+import { getValidSortedEvents } from '@/utils/dateUtils';
 import { UCaldasTheme } from '../constants/Colors';
-import { UniversityEvent } from '../constants/mockEvents';
+import { Event } from '@/src/domain/entities/Event';
+import { useEvents } from '@/src/presentation/hooks/useEvents';
 
 export default function WelcomeScreen() {
     const user = useAuthStore((state) => state.user);
     const userName = user?.name;
+    const { events, loading } = useEvents();
 
-    const [events, setEvents] = useState<UniversityEvent[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchEvents();
-    }, []);
-
-    const fetchEvents = async () => {
-        try {
-            const response = await axios.get<UniversityEvent[]>(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/events`);
-            const sortedEvents = getValidSortedEvents(response.data);
-            setEvents(sortedEvents);
-        } catch (error) {
-            console.error("Error cargando los eventos desde la BD:", error);
-        } finally {
-            setLoading(false); 
-        }
-    };
-
-    const renderEventItem = ({ item }: { item: UniversityEvent }) => (
+    const renderEventItem = ({ item }: { item: Event }) => (
       <EventCard event={item} />
     );
 

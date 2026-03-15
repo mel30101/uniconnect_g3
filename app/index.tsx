@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { UCaldasTheme } from './constants/Colors';
 
 export default function LoginScreen() {
@@ -62,7 +62,6 @@ export default function LoginScreen() {
     );
   }
 
-  // Interfaz principal de Login
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Image 

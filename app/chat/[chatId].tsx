@@ -1,23 +1,17 @@
-import { db } from '@/config/firebase';
-import { subscribeToMessages } from '@/services/chatService';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useChat } from '@/src/presentation/hooks/useChat';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, Keyboard, KeyboardAvoidingView, Text, View } from 'react-native';
-import ChatBubble from '../../components/chat/ChatBubble';
-import MessageInput from '../../components/chat/MessageInput';
+import ChatBubble from '@/src/presentation/components/chat/ChatBubble';
+import MessageInput from '@/src/presentation/components/chat/MessageInput';
 import UCaldasTheme from '../constants/Colors';
 
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
-  const user = useAuthStore((state) => state.user);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [chatDetails, setChatDetails] = useState<any>(null);
+  const { messages, otherUserName, user } = useChat(chatId);
 
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-
   const headerHeight = useHeaderHeight();
 
   useEffect(() => {
@@ -29,31 +23,8 @@ export default function ChatScreen() {
       hideSub.remove();
     };
   }, []);
-
-  useEffect(() => {
-    if (!chatId) return;
-    const unsubscribe = subscribeToMessages(chatId, setMessages);
-
-    const fetchChatDetails = async () => {
-      const chatRef = doc(db, 'chats', chatId);
-      const chatSnap = await getDoc(chatRef);
-      if (chatSnap.exists()) {
-        setChatDetails(chatSnap.data());
-      }
-    };
-
-    fetchChatDetails();
-
-    return unsubscribe;
-  }, [chatId]);
-
-  const otherUserId = chatDetails?.participants?.find((id: string) => id !== user?.uid);
-  const otherUserName = otherUserId && chatDetails?.participantsInfo?.[otherUserId]?.name
-    ? chatDetails.participantsInfo[otherUserId].name
-    : 'Cargando...';
     
   return (
-
     <>
       <Stack.Screen
         options={{
@@ -84,7 +55,6 @@ export default function ChatScreen() {
         behavior="padding"
         keyboardVerticalOffset={70}
       >
-
         <FlatList
           data={messages}
           keyExtractor={item => item.id}
@@ -98,7 +68,7 @@ export default function ChatScreen() {
           )}
         />
         <MessageInput chatId={chatId} />
-      </KeyboardAvoidingView >
+      </KeyboardAvoidingView>
     </>
   );
 }

@@ -3,8 +3,8 @@ import { Tabs } from 'expo-router';
 import { Image, Text, View } from 'react-native';
 import { UCaldasTheme } from '../constants/Colors';
 import { useEffect } from 'react';
-import { useAuthStore } from '../../store/useAuthStore';
-import { getUserProfile } from '../../services/userService';
+import { useAuthStore } from '@/src/presentation/store/useAuthStore';
+import { ApiProfileRepository } from '@/src/data/repositories/ApiProfileRepository';
 
 export default function TabLayout() {
   const { user, setUser } = useAuthStore();
@@ -13,9 +13,10 @@ export default function TabLayout() {
     const syncProfile = async () => {
       if (user?.uid && !user.careerId) {
         try {
-          const profile = await getUserProfile(user.uid);
+          const profileRepo = new ApiProfileRepository();
+          const profile = await profileRepo.getProfile(user.uid);
           if (profile) {
-            setUser({ ...user, ...profile });
+            setUser({ ...user, ...profile } as any);
           }
         } catch (error) {
           console.error("Error syncing profile in layout:", error);

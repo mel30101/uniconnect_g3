@@ -1,11 +1,11 @@
-import { getOrCreateChat } from "@/services/chatService";
+import { getOrCreateChat } from "@/src/di/container";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { UCaldasTheme } from "../constants/Colors";
-
-import { useAuthStore } from "../../store/useAuthStore";
+import { useAuthStore } from "@/src/presentation/store/useAuthStore";
+import { ApiProfileRepository } from "@/src/data/repositories/ApiProfileRepository";
 
 export default function ExternalProfileScreen() {
     const { id } = useLocalSearchParams();
@@ -15,13 +15,11 @@ export default function ExternalProfileScreen() {
 
     const authUser = useAuthStore((state) => state.user);
 
-    const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/academic-profile/${id}`);
-                const data = await response.json();
+                const profileRepo = new ApiProfileRepository();
+                const data = await profileRepo.getProfile(id as string);
                 setUser(data);
             } catch (error) {
                 console.error("Error al obtener perfil:", error);
@@ -134,21 +132,16 @@ export default function ExternalProfileScreen() {
                 )}
             </View>
 
-            {/* --- BOTÓN DE INICIAR CHAT (PROVISIONAL) --- */}
             <TouchableOpacity
                 style={styles.chatButton}
                 onPress={async () => {
                     if (!authUser?.uid || !id) return;
-
-                    const chatId = await getOrCreateChat(
+                    const chatId = await getOrCreateChat.execute(
                         authUser.uid,
                         id as string,
                         authUser.name ?? "usuario",
                         user.userName
                     );
-
-                    console.log("CHAT ID:", chatId);
-
                     router.push({
                         pathname: "/chat/[chatId]",
                         params: { chatId },
@@ -163,97 +156,38 @@ export default function ExternalProfileScreen() {
 }
 
 const readStyles = StyleSheet.create({
-    pathItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    pathLabel: {
-        fontSize: 12,
-        color: '#666',
-        fontWeight: '500',
-    },
-    pathValue: {
-        fontSize: 15,
-        color: UCaldasTheme.azulOscuro,
-        fontWeight: '600',
-    }
+    pathItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    pathLabel: { fontSize: 12, color: '#666', fontWeight: '500' },
+    pathValue: { fontSize: 15, color: UCaldasTheme.azulOscuro, fontWeight: '600' }
 });
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#f4f6f8" },
-    backButton: {
-        marginTop: 50, marginLeft: 20,
-        width: 40, height: 40,
-        justifyContent: "center"
-    },
-    header: {
-        alignItems: "center",
-        paddingHorizontal: 30, // Espacio lateral para que el texto no toque los bordes
-        paddingBottom: 20
-    },
+    backButton: { marginTop: 50, marginLeft: 20, width: 40, height: 40, justifyContent: "center" },
+    header: { alignItems: "center", paddingHorizontal: 30, paddingBottom: 20 },
     avatarPlaceholder: {
-        width: 100, height: 100,
-        borderRadius: 50, backgroundColor: UCaldasTheme.azulOscuro,
-        justifyContent: "center", alignItems: "center",
-        marginBottom: 15
+        width: 100, height: 100, borderRadius: 50, backgroundColor: UCaldasTheme.azulOscuro,
+        justifyContent: "center", alignItems: "center", marginBottom: 15
     },
     avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
-    name: {
-        fontSize: 22, fontWeight: "bold", color: UCaldasTheme.azulOscuro,
-        textAlign: "center", width: '100%'
-    },
-    career: {
-        fontSize: 16, color: UCaldasTheme.azulOscuro,
-        marginTop: 10, textAlign: "center", fontWeight: "600"
-    },
-    monitorBadge: { backgroundColor: UCaldasTheme.dorado, paddingHorizontal: 15, paddingVertical: 6, borderRadius: 20, marginTop: 15 },
-    monitorText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
+    name: { fontSize: 22, fontWeight: "bold", color: UCaldasTheme.azulOscuro, textAlign: "center", width: '100%' },
     infoCard: { backgroundColor: "#fff", margin: 20, borderRadius: 16, padding: 20, elevation: 2 },
     sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 15, color: "#374151" },
     subjectItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
     subjectText: { marginLeft: 10, fontSize: 15, color: "#4b5563" },
-
     chatButton: {
-        backgroundColor: UCaldasTheme.azulOscuro,
-        flexDirection: "row", marginHorizontal: 20,
-        padding: 16, borderRadius: 12,
-        justifyContent: "center", alignItems: "center",
+        backgroundColor: UCaldasTheme.azulOscuro, flexDirection: "row", marginHorizontal: 20,
+        padding: 16, borderRadius: 12, justifyContent: "center", alignItems: "center",
         marginTop: 10, elevation: 3
     },
     chatButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-    emailText: {
-        fontSize: 15,
-        color: "#4b5563",
-        marginTop: 5,
-    },
-    infoRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    infoValue: {
-        marginLeft: 10,
-        fontSize: 15,
-        color: "#4b5563",
-    },
+    emailText: { fontSize: 15, color: "#4b5563", marginTop: 5 },
+    infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+    infoValue: { marginLeft: 10, fontSize: 15, color: "#4b5563" },
     bioContainer: {
-        marginTop: 10,
-        padding: 15,
-        backgroundColor: "#f9fafb",
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#eee",
+        marginTop: 10, padding: 15, backgroundColor: "#f9fafb",
+        borderRadius: 12, borderWidth: 1, borderColor: "#eee"
     },
-    bioTitle: {
-        fontWeight: "bold",
-        color: UCaldasTheme.azulOscuro,
-        marginBottom: 8,
-        fontSize: 15,
-    },
-    bioText: {
-        color: "#4b5563",
-        fontSize: 14,
-        lineHeight: 22,
-    },
+    bioTitle: { fontWeight: "bold", color: UCaldasTheme.azulOscuro, marginBottom: 8, fontSize: 15 },
+    bioText: { color: "#4b5563", fontSize: 14, lineHeight: 22 },
 });

@@ -1,10 +1,10 @@
-import ChatListItem from "@/components/chat/ChatListItem";
-import { subscribeToUserChats } from "@/services/chatService";
+import ChatListItem from "@/src/presentation/components/chat/ChatListItem";
+import { chatRepo } from "@/src/di/container";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
-import { useAuthStore } from "../../../store/useAuthStore";
-import { Chat } from "../../../types/Chat";
+import { useAuthStore } from "@/src/presentation/store/useAuthStore";
+import { Chat } from "@/src/domain/entities/Chat";
 
 export default function ChatListScreen() {
   const user = useAuthStore((state) => state.user);
@@ -13,7 +13,7 @@ export default function ChatListScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = subscribeToUserChats(user.uid, setChats);
+    const unsubscribe = chatRepo.subscribeToUserChats(user.uid, setChats);
     return unsubscribe;
   }, [user]);
 

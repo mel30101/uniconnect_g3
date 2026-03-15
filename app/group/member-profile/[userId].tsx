@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, SafeAreaView, Text, View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { useProfile } from '@/hooks/useProfile';
+import { useProfile } from '@/src/presentation/hooks/useProfile';
 import { UCaldasTheme } from '../../constants/Colors';
-import { ProfileInfoRead } from '../../../components/profile/ProfileInfoRead';
-import { ProfileAcademicRead } from '../../../components/profile/ProfileAcademicRead';
+import { ProfileInfoRead } from '@/src/presentation/components/profile/ProfileInfoRead';
+import { ProfileAcademicRead } from '@/src/presentation/components/profile/ProfileAcademicRead';
 
-// IMPORTANTE: Importa Firebase para buscar el correo de Santiago
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase'; // Ajusta esta ruta a tu archivo de configuración de Firebase
+// Importa el repositorio a través del contenedor de dependencias
+import { ApiProfileRepository } from '@/src/data/repositories/ApiProfileRepository';
 
 export default function MemberProfileView() {
     // 1. Recibimos el userId y ahora también el userName
@@ -21,15 +20,16 @@ export default function MemberProfileView() {
     const [targetEmail, setTargetEmail] = useState('Cargando correo...');
 
     // 3. Buscamos el correo de Santiago en tu base de datos
+    // 3. Buscamos el correo de Santiago usando el repositorio
     useEffect(() => {
         const fetchUserEmail = async () => {
             try {
-                // Buscamos el documento del usuario en la colección 'users'
-                const userDoc = await getDoc(doc(db, 'users', userId));
-                if (userDoc.exists()) {
-                    setTargetEmail(userDoc.data().email);
+                const profileRepo = new ApiProfileRepository();
+                const fetchedUser = await profileRepo.getProfile(userId as string);
+                if (fetchedUser && fetchedUser.email) {
+                    setTargetEmail(fetchedUser.email);
                 } else {
-                    setTargetEmail('Correo no encontrado');
+                    setTargetEmail('Correo no configurado u oculto');
                 }
             } catch (error) {
                 console.log("Error buscando correo:", error);

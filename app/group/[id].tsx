@@ -1,49 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert, Modal, TextInput, FlatList } from 'react-native';
-import { useLocalSearchParams, router, Stack, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { UCaldasTheme } from '../constants/Colors';
-import { getOrCreateChat } from '../../services/chatService';
-import { useGroups } from '../../hooks/useGroups';
+import { getOrCreateChat } from '@/src/di/container';
+import { useGroupDetail } from '@/src/presentation/hooks/useGroupDetail';
 import { styles } from './GroupDetailStyles';
-import { useAuthStore } from '../../store/useAuthStore';
-import { useSearchStudents } from "@/hooks/useSearchStudents";
+import { useAuthStore } from '@/src/presentation/store/useAuthStore';
+import { useSearchStudents } from "@/src/presentation/hooks/useSearchStudents";
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { fetchGroupDetail, fetchRequests, joinGroup, processRequest, transferAdmin, requests, loading, removeMember } = useGroups();
-    const [group, setGroup] = useState<any>(null);
+    const router = useRouter();
+    const {
+        group,
+        setGroup,
+        requests,
+        loading,
+        isAdmin,
+        isMember,
+        user,
+        fetchDetail,
+        fetchRequests,
+        joinGroup,
+        processRequest,
+        transferAdmin,
+        removeMember,
+        addMemberToGroup,
+        leaveGroup,
+    } = useGroupDetail(id!);
+
     const [sendingRequest, setSendingRequest] = useState(false);
-    const user = useAuthStore((state) => state.user);
-    const isAdmin = group?.members?.some((m: any) => m.id === user?.uid && m.role === 'admin');
-    const isMember = group?.members?.some((m: any) => m.id === user?.uid);
     const [showAddModal, setShowAddModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const { addMemberToGroup } = useGroups();
-    const router = useRouter();
-    const { leaveGroup } = useGroups()
     const {
         users: availableStudents,
         loading: searchLoading,
         performSearch
     } = useSearchStudents(user?.uid);
+
     useEffect(() => {
-        if (id) fetchGroupDetail(id).then(data => data && setGroup(data));
-    }, [id]);
-    useEffect(() => {
-        if (isAdmin && id) fetchRequests(id);
+        if (isAdmin && id) fetchRequests();
     }, [isAdmin, id]);
+
     useEffect(() => {
         if (showAddModal && group?.subjectId) {
             performSearch("", [group.subjectId]);
         }
     }, [showAddModal, group?.subjectId]);
+
     const handleJoinRequest = async () => {
         setSendingRequest(true);
-        const success = await joinGroup(id!);
+        const success = await joinGroup();
         if (success) router.back();
         setSendingRequest(false);
     };
+
     if (loading && !group) return (
         <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={UCaldasTheme.azulOscuro} />
@@ -59,6 +71,7 @@ export default function GroupDetailScreen() {
             </TouchableOpacity>
         </View>
     );
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
@@ -113,8 +126,6 @@ export default function GroupDetailScreen() {
                                     <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador' : 'Estudiante'}</Text>
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-
-                                    {/* 1. Insignia de Admin */}
                                     {member.role === 'admin' && (
                                         <View style={styles.starCircle}>
                                             <Ionicons name="star" size={14} color="#fff" />
@@ -124,15 +135,14 @@ export default function GroupDetailScreen() {
                                         <TouchableOpacity onPress={() => {
                                             Alert.alert(
                                                 "Ceder cargo",
-                                                `¿Estás seguro de que deseas cederle el cargo de administrador a ${member.name}? Al hacerlo, perderás tus privilegios.`,
+                                                `¿Estás seguro de que deseas cederle el cargo de administrador a ${member.name}?`,
                                                 [
                                                     { text: "Cancelar", style: "cancel" },
                                                     {
                                                         text: "Aceptar",
                                                         style: "destructive",
                                                         onPress: async () => {
-                                                            if (!id) return;
-                                                            const success = await transferAdmin(id, member.id);
+                                                            const success = await transferAdmin(member.id);
                                                             if (success) router.back();
                                                         }
                                                     }
@@ -153,8 +163,7 @@ export default function GroupDetailScreen() {
                                                         text: "Eliminar",
                                                         style: "destructive",
                                                         onPress: async () => {
-                                                            const success = await removeMember(id!, member.id);
-                                                            if (success) fetchGroupDetail(id!).then(setGroup);
+                                                            await removeMember(member.id);
                                                         }
                                                     }
                                                 ]
@@ -166,13 +175,12 @@ export default function GroupDetailScreen() {
                                     {isMember && member.id !== user?.uid && (
                                         <TouchableOpacity onPress={async () => {
                                             if (!user?.uid || !member.id) return;
-                                            const chatId = await getOrCreateChat(user.uid, member.id, user.name ?? "usuario", member.name);
+                                            const chatId = await getOrCreateChat.execute(user.uid, member.id, user.name ?? "usuario", member.name);
                                             router.push({ pathname: "/chat/[chatId]", params: { chatId } });
                                         }}>
                                             <Ionicons name="chatbubble-ellipses" size={24} color={UCaldasTheme.azulOscuro} />
                                         </TouchableOpacity>
                                     )}
-
                                 </View>
                             </View>
                         ))}
@@ -186,12 +194,10 @@ export default function GroupDetailScreen() {
                         </View>
                         {requests.map((req) => (
                             <View key={req.id} style={styles.memberItem}>
-
                                 <View style={styles.memberInfo}>
                                     <TouchableOpacity
                                         onPress={() => {
                                             router.push({
-                                                // Definimos la ruta hacia el perfil del tercero
                                                 pathname: "/group/member-profile/[userId]",
                                                 params: { userId: req.userId, userName: req.userName }
                                             });
@@ -204,12 +210,11 @@ export default function GroupDetailScreen() {
                                     <Text style={styles.memberName}></Text>
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
                                         <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#4CAF50' }]} onPress={async () => {
-                                            const success = await processRequest(id!, req.id, 'accepted');
-                                            if (success) fetchGroupDetail(id!).then(data => data && setGroup(data));
+                                            await processRequest(req.id, 'accepted');
                                         }}>
                                             <Text style={styles.actionButtonText}>Aceptar</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336', marginLeft: 10 }]} onPress={() => processRequest(id!, req.id, 'rejected')}>
+                                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#F44336', marginLeft: 10 }]} onPress={() => processRequest(req.id, 'rejected')}>
                                             <Text style={styles.actionButtonText}>Rechazar</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -231,7 +236,7 @@ export default function GroupDetailScreen() {
                                         text: "Sí, salir",
                                         style: "destructive",
                                         onPress: async () => {
-                                            const success = await leaveGroup(id!, user!.uid);
+                                            const success = await leaveGroup();
                                             if (success) {
                                                 router.replace('/(tabs)/home');
                                             }
@@ -256,7 +261,7 @@ export default function GroupDetailScreen() {
                     </TouchableOpacity>
                 )}
 
-                < Modal visible={showAddModal} animationType="slide" >
+                <Modal visible={showAddModal} animationType="slide">
                     <SafeAreaView style={{ flex: 1, padding: 20 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
                             <TouchableOpacity onPress={() => setShowAddModal(false)}>
@@ -280,7 +285,6 @@ export default function GroupDetailScreen() {
                             keyExtractor={(item) => item.uid}
                             renderItem={({ item }) => {
                                 const isAlreadyInGroup = group?.members?.some((m: any) => m.id === item.uid);
-
                                 return (
                                     <View style={[styles.memberItem, { opacity: isAlreadyInGroup ? 0.6 : 1 }]}>
                                         <View style={{ flex: 1 }}>
@@ -291,22 +295,18 @@ export default function GroupDetailScreen() {
                                                 </Text>
                                             )}
                                         </View>
-
                                         <TouchableOpacity
                                             disabled={isAlreadyInGroup}
                                             onPress={async () => {
-                                                const success = await addMemberToGroup(id!, item.uid);
+                                                const success = await addMemberToGroup(item.uid);
                                                 if (success) {
                                                     Alert.alert("Éxito", "Estudiante añadido");
-                                                    fetchGroupDetail(id!).then(setGroup);
                                                     setShowAddModal(false);
                                                 }
                                             }}
                                             style={{
                                                 backgroundColor: isAlreadyInGroup ? '#BDBDBD' : UCaldasTheme.azulOscuro,
-                                                paddingVertical: 8,
-                                                paddingHorizontal: 15,
-                                                borderRadius: 5
+                                                paddingVertical: 8, paddingHorizontal: 15, borderRadius: 5
                                             }}
                                         >
                                             <Text style={{ color: '#fff', fontWeight: 'bold' }}>
@@ -318,8 +318,8 @@ export default function GroupDetailScreen() {
                             }}
                         />
                     </SafeAreaView>
-                </Modal >
-            </ScrollView >
+                </Modal>
+            </ScrollView>
             {!isMember && (
                 <View style={styles.footerContainer}>
                     <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
@@ -331,8 +331,7 @@ export default function GroupDetailScreen() {
                         )}
                     </TouchableOpacity>
                 </View>
-            )
-            }
-        </SafeAreaView >
+            )}
+        </SafeAreaView>
     );
 }
