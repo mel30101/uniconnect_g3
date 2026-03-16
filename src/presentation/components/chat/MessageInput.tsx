@@ -4,6 +4,7 @@ import { Button, TextInput, View, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import * as DocumentPicker from 'expo-document-picker';
+import { Platform } from 'react-native';
 
 export default function MessageInput({ chatId }: { chatId: string }) {
   const [text, setText] = useState('');
@@ -19,14 +20,31 @@ export default function MessageInput({ chatId }: { chatId: string }) {
   const handlePickFile = async () => {
     if (!user) return;
 
-    const res = await DocumentPicker.getDocumentAsync({
-      type: '*/*',
-      copyToCacheDirectory: true, 
-    });
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
 
-    if (!res.canceled && res.assets && res.assets.length > 0) {
-      const asset = res.assets[0];
-      await sendFileMessageUC.execute(chatId, user.uid, asset);
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        const asset = res.assets[0];
+
+        let detectedType = asset.mimeType;
+        if (!detectedType && asset.name.toLowerCase().endsWith('.pdf')) {
+          detectedType = 'application/pdf';
+        }
+
+        const fileToUpload = {
+          uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+          type: detectedType || 'application/octet-stream',
+          name: asset.name,
+          size: asset.size
+        };
+
+        await sendFileMessageUC.execute(chatId, user.uid, fileToUpload);
+      }
+    } catch (err) {
+      console.log("Error al seleccionar archivo:", err);
     }
   };
 

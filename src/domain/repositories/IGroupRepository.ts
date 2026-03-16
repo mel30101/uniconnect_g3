@@ -12,4 +12,5 @@ export interface IGroupRepository {
   addMember(groupId: string, userId: string, role: string): Promise<boolean>;
   leaveGroup(groupId: string, userId: string): Promise<boolean>;
   getAvailableStudents(groupId: string, subjectId: string, search?: string): Promise<any[]>;
+  deleteUserRequests(groupId: string, userId: string): Promise<boolean>;
 }

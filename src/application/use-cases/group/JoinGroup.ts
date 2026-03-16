@@ -1,4 +1,4 @@
-import { IGroupRepository } from '../../domain/repositories/IGroupRepository';
+import { IGroupRepository } from '../../../domain/repositories/IGroupRepository';
 
 export class JoinGroup {
   constructor(private groupRepo: IGroupRepository) {}

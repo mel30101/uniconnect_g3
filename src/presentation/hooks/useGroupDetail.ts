@@ -1,16 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { useAuthStore } from '../store/useAuthStore';
+import { ApiGroupRepository } from '../../data/repositories/ApiGroupRepository';
 import {
+  addMember,
   getGroupDetail as getGroupDetailUC,
   joinGroup as joinGroupUC,
-  processRequest as processRequestUC,
-  transferAdmin as transferAdminUC,
-  removeMember as removeMemberUC,
-  addMember,
   leaveGroup as leaveGroupUC,
+  processRequest as processRequestUC,
+  removeMember as removeMemberUC,
+  transferAdmin as transferAdminUC,
 } from '../../di/container';
-import { ApiGroupRepository } from '../../data/repositories/ApiGroupRepository';
+import { useAuthStore } from '../store/useAuthStore';
+import { handleApiError } from '../utils/errorHandler';
 
 const groupRepo = new ApiGroupRepository();
 
@@ -54,7 +55,7 @@ export const useGroupDetail = (groupId: string) => {
       Alert.alert('¡Éxito!', 'Solicitud enviada.');
       return true;
     } catch (e: any) {
-      Alert.alert('Aviso', e.response?.data?.error || e.message);
+      handleApiError(e);
       return false;
     }
   };
@@ -94,7 +95,7 @@ export const useGroupDetail = (groupId: string) => {
       fetchDetail();
       return true;
     } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.error || 'No se pudo eliminar al miembro.');
+      Alert.alert('Error', 'Ya enviaste una solicitud para este grupo.');
       return false;
     }
   };

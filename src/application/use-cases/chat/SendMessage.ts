@@ -1,4 +1,4 @@
-import { IChatRepository } from '../../domain/repositories/IChatRepository';
+import { IChatRepository } from '../../../domain/repositories/IChatRepository';
 
 export class SendMessage {
   constructor(private chatRepo: IChatRepository) {}

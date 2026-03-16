@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, Alert, Modal, TextInput, FlatList } from 'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { UCaldasTheme } from '../constants/Colors';
 import { getOrCreateChat } from '@/src/di/container';
 import { useGroupDetail } from '@/src/presentation/hooks/useGroupDetail';
-import { styles } from './GroupDetailStyles';
-import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { useSearchStudents } from "@/src/presentation/hooks/useSearchStudents";
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Modal, SafeAreaView, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { handleApiError } from '../../src/presentation/utils/errorHandler';
+import { UCaldasTheme } from '../constants/Colors';
+import { styles } from './GroupDetailStyles';
 
 export default function GroupDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,10 +50,19 @@ export default function GroupDetailScreen() {
     }, [showAddModal, group?.subjectId]);
 
     const handleJoinRequest = async () => {
-        setSendingRequest(true);
-        const success = await joinGroup();
-        if (success) router.back();
-        setSendingRequest(false);
+        try {
+            setSendingRequest(true);
+
+            const success = await joinGroup();
+
+            if (success) {
+                Alert.alert("Éxito", "Solicitud enviada correctamente.");
+                router.back();
+            }
+
+        } catch (error: any) {
+            handleApiError(error, 'No se pudo enviar la solicitud.');
+        }
     };
 
     if (loading && !group) return (
@@ -121,10 +130,27 @@ export default function GroupDetailScreen() {
                                 <View style={styles.memberAvatar}>
                                     <Text style={styles.avatarText}>{member.name.charAt(0).toUpperCase()}</Text>
                                 </View>
-                                <View style={styles.memberInfo}>
-                                    <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberRole}>{member.role === 'admin' ? 'Administrador' : 'Estudiante'}</Text>
-                                </View>
+                                <TouchableOpacity
+                                    style={styles.memberInfo}
+                                    disabled={!isMember} // Si no es miembro, el botón se desactiva
+                                    onPress={() => {
+                                        router.push({
+                                            pathname: "/group/member-profile/[userId]",
+                                            params: { userId: member.id, userName: member.name }
+                                        });
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.memberName,
+                                        // Agregamos un indicador visual (subrayado) solo si es miembro
+                                        isMember && { color: UCaldasTheme.azulOscuro, textDecorationLine: 'underline' }
+                                    ]}>
+                                        {member.name}
+                                    </Text>
+                                    <Text style={styles.memberRole}>
+                                        {member.role === 'admin' ? 'Administrador' : 'Estudiante'}
+                                    </Text>
+                                </TouchableOpacity>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
                                     {member.role === 'admin' && (
                                         <View style={styles.starCircle}>
@@ -285,6 +311,7 @@ export default function GroupDetailScreen() {
                             keyExtractor={(item) => item.uid}
                             renderItem={({ item }) => {
                                 const isAlreadyInGroup = group?.members?.some((m: any) => m.id === item.uid);
+                                const hasPendingRequest = requests?.some((r: any) => r.userId === item.uid);
                                 return (
                                     <View style={[styles.memberItem, { opacity: isAlreadyInGroup ? 0.6 : 1 }]}>
                                         <View style={{ flex: 1 }}>

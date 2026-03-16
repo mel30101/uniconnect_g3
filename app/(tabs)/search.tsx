@@ -18,7 +18,7 @@ export default function SearchScreen() {
     const [showFilters, setShowFilters] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
-    
+
     const isSelectingFromDropdown = useRef(false);
 
     const sections = useMemo(() => [
@@ -49,7 +49,7 @@ export default function SearchScreen() {
 
     const handleSearch = (term?: string) => {
         const finalTerm = term !== undefined ? term : search;
-        
+
         if (finalTerm.trim() === "" && !selectedMateria) {
             setSearch("");
             resetResults();
@@ -87,8 +87,8 @@ export default function SearchScreen() {
         const searchLower = query.toLowerCase();
         const searchTerms = searchLower.split(' ').filter(t => t.length > 0);
         const words = text.toLowerCase().split(' ');
-        
-        return searchTerms.every(term => 
+
+        return searchTerms.every(term =>
             words.some(word => word.startsWith(term))
         );
     };
@@ -148,8 +148,8 @@ export default function SearchScreen() {
                             <View>
                                 <Text style={styles.dropdownHeader}>Nombres de Grupo</Text>
                                 {groupResults.map(g => (
-                                    <TouchableOpacity 
-                                        key={`g-${g.id}`} 
+                                    <TouchableOpacity
+                                        key={`g-${g.id}`}
                                         style={styles.dropdownItem}
                                         onPress={() => handleSearch(g.name)}
                                     >
@@ -163,8 +163,8 @@ export default function SearchScreen() {
                             <View>
                                 <Text style={styles.dropdownHeader}>Grupos por Materia</Text>
                                 {subjectResults.map(g => (
-                                    <TouchableOpacity 
-                                        key={`s-${g.subjectId}`} 
+                                    <TouchableOpacity
+                                        key={`s-${g.subjectId}`}
                                         style={styles.dropdownItem}
                                         onPress={() => handleSearch(g.subjectName || '')}
                                     >
@@ -193,7 +193,10 @@ export default function SearchScreen() {
             <FlatList
                 data={groups}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <GroupCard group={item} isAdmin={false} />}
+                renderItem={({ item }) => <GroupCard group={{
+                    ...item,
+                    subjectName: item.subjectName ?? "Sin materia" 
+                }} isAdmin={false} />}
                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 30 }}
                 ListEmptyComponent={!loading ? (
                     <View style={styles.emptyContainer}>

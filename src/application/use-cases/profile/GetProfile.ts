@@ -1,5 +1,5 @@
-import { IProfileRepository } from '../../domain/repositories/IProfileRepository';
-import { IAcademicRepository } from '../../domain/repositories/IAcademicRepository';
+import { IAcademicRepository } from '../../../domain/repositories/IAcademicRepository';
+import { IProfileRepository } from '../../../domain/repositories/IProfileRepository';
 
 export class GetProfile {
   constructor(

@@ -1,19 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { useAuthStore } from '../store/useAuthStore';
-import {
-  createGroup as createGroupUC,
-  getUserGroups,
-  getGroupDetail as getGroupDetailUC,
-  joinGroup as joinGroupUC,
-  processRequest as processRequestUC,
-  transferAdmin as transferAdminUC,
-  removeMember as removeMemberUC,
-  addMember,
-  leaveGroup as leaveGroupUC,
-  getCareerStructure,
-} from '../../di/container';
+import { addMember, createGroup as createGroupUC, getCareerStructure, getGroupDetail as getGroupDetailUC, getUserGroups, joinGroup as joinGroupUC, leaveGroup as leaveGroupUC, processRequest as processRequestUC, removeMember as removeMemberUC, transferAdmin as transferAdminUC, } from '../../di/container';
 import { Subject } from '../../domain/entities/Subject';
+import { useAuthStore } from '../store/useAuthStore';
+import { handleApiError } from '../utils/errorHandler';
 
 export const useGroups = () => {
   const user = useAuthStore((state) => state.user);
@@ -22,7 +12,6 @@ export const useGroups = () => {
   const [managedGroups, setManagedGroups] = useState<any[]>([]);
   const [memberGroups, setMemberGroups] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
-
   const fetchManagedGroups = useCallback(async () => {
     if (!user?.uid) return;
     setLoading(true);
@@ -35,7 +24,6 @@ export const useGroups = () => {
       setLoading(false);
     }
   }, [user?.uid]);
-
   const fetchMemberGroups = useCallback(async () => {
     if (!user?.uid) return;
     setLoading(true);
@@ -48,7 +36,6 @@ export const useGroups = () => {
       setLoading(false);
     }
   }, [user?.uid]);
-
   const fetchGroupDetail = useCallback(async (groupId: string) => {
     setLoading(true);
     try {
@@ -60,7 +47,6 @@ export const useGroups = () => {
       setLoading(false);
     }
   }, []);
-
   const fetchUserSubjects = useCallback(async () => {
     if (!user?.uid || !user?.careerId) return;
     try {
@@ -79,11 +65,7 @@ export const useGroups = () => {
       console.error('Error fetching subjects for groups:', e);
     }
   }, [user?.uid, user?.careerId, user?.subjects]);
-
-  useEffect(() => {
-    fetchUserSubjects();
-  }, [fetchUserSubjects]);
-
+  useEffect(() => { fetchUserSubjects(); }, [fetchUserSubjects]);
   const createGroup = async (name: string, subjectId: string, description: string) => {
     if (!user?.uid) return;
     setLoading(true);
@@ -91,19 +73,12 @@ export const useGroups = () => {
       const data = await createGroupUC.execute(name, subjectId, description, user.uid);
       return data;
     } catch (e: any) {
-      let errorMsg = 'No se pudo crear el grupo.';
-      if (e.response?.data?.error === 'GROUP_NAME_ALREADY_EXISTS') {
-        errorMsg = 'El nombre del grupo ya está en uso.';
-      } else if (e.response?.data?.error === 'NAME_TOO_SHORT') {
-        errorMsg = 'El nombre es demasiado corto (mín. 3 caracteres).';
-      }
-      Alert.alert('Error', errorMsg);
+      handleApiError(e, 'No se pudo crear el grupo.');
       return null;
     } finally {
       setLoading(false);
     }
   };
-
   const fetchRequests = useCallback(async (groupId: string) => {
     try {
       const { ApiGroupRepository } = await import('../../data/repositories/ApiGroupRepository');
@@ -114,19 +89,17 @@ export const useGroups = () => {
       console.error(e);
     }
   }, []);
-
   const joinGroupHandler = async (groupId: string) => {
-    if (!user) return;
+    if (!user) return false;
+
     try {
       await joinGroupUC.execute(groupId, user.uid, user.name);
-      Alert.alert('¡Éxito!', 'Solicitud enviada.');
       return true;
     } catch (e: any) {
-      Alert.alert('Aviso', e.response?.data?.error || e.message);
+      handleApiError(e);
       return false;
     }
   };
-
   const processRequestHandler = async (groupId: string, requestId: string, status: 'accepted' | 'rejected') => {
     try {
       const success = await processRequestUC.execute(groupId, requestId, status);
@@ -140,7 +113,6 @@ export const useGroups = () => {
     }
     return false;
   };
-
   const transferAdminHandler = async (groupId: string, newAdminId: string) => {
     if (!user?.uid) return false;
     try {
@@ -152,7 +124,6 @@ export const useGroups = () => {
       return false;
     }
   };
-
   const removeMemberHandler = async (groupId: string, userId: string) => {
     if (!user?.uid) return false;
     try {
@@ -164,7 +135,6 @@ export const useGroups = () => {
       return false;
     }
   };
-
   const addMemberToGroup = async (groupId: string, userId: string) => {
     try {
       return await addMember.execute(groupId, userId);
@@ -173,21 +143,28 @@ export const useGroups = () => {
       return false;
     }
   };
-
   const leaveGroupHandler = async (groupId: string, userId: string) => {
     try {
       const success = await leaveGroupUC.execute(groupId, userId);
       if (success) {
-        Alert.alert('Éxito', 'Has salido del grupo.');
+        try {
+          const { ApiGroupRepository } = await import('../../data/repositories/ApiGroupRepository');
+          const repo = new ApiGroupRepository();
+          await repo.deleteUserRequests(groupId, userId);
+        } catch (cleanError) {
+          console.warn("No se pudieron limpiar las solicitudes, pero el usuario salió.");
+        }
+        Alert.alert('Éxito', 'Has salido del grupo. Ahora puedes volver a solicitar unirte si lo deseas.');
         return true;
       }
       return false;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      const errorMsg = e.response?.data?.message || "No se pudo salir del grupo.";
+      Alert.alert('Error', String(errorMsg));
       return false;
     }
   };
-
   return {
     createGroup,
     userSubjects,
