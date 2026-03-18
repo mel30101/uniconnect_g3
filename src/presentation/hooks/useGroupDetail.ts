@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { ApiGroupRepository } from '../../data/repositories/ApiGroupRepository';
-import {
-  addMember,
-  getGroupDetail as getGroupDetailUC,
-  joinGroup as joinGroupUC,
-  leaveGroup as leaveGroupUC,
-  processRequest as processRequestUC,
-  removeMember as removeMemberUC,
-  transferAdmin as transferAdminUC,
-} from '../../di/container';
+import { getGroupDetail as getGroupDetailUC } from '../../di/container';
 import { useAuthStore } from '../store/useAuthStore';
-import { handleApiError } from '../utils/errorHandler';
+import { useGroupActions } from './useGroupActions'; 
 
 const groupRepo = new ApiGroupRepository();
 
 export const useGroupDetail = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
+  
+  const { joinGroup, processRequest, transferAdmin, removeMember, addMemberToGroup, leaveGroup } = useGroupActions();
+
   const [group, setGroup] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,90 +42,38 @@ export const useGroupDetail = (groupId: string) => {
     fetchDetail();
   }, [fetchDetail]);
 
-  const joinGroup = async () => {
-    if (!user) return false;
-    try {
-      await joinGroupUC.execute(groupId, user.uid, user.name);
-      Alert.alert('¡Éxito!', 'Solicitud enviada.');
-      return true;
-    } catch (e: any) {
-      handleApiError(e);
-      return false;
-    }
-  };
+  const handleJoin = async () => await joinGroup(groupId);
 
-  const processRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
-    try {
-      const success = await processRequestUC.execute(groupId, requestId, status);
-      if (success) {
-        Alert.alert('Éxito', `Solicitud ${status === 'accepted' ? 'aceptada' : 'rechazada'}`);
-        fetchRequests();
-        fetchDetail();
-        return true;
-      }
-    } catch {
-      Alert.alert('Error', 'No se pudo procesar');
-    }
-    return false;
-  };
-
-  const transferAdminHandler = async (newAdminId: string) => {
-    if (!user?.uid) return false;
-    try {
-      await transferAdminUC.execute(groupId, user.uid, newAdminId);
-      Alert.alert('¡Éxito!', 'Has cedido la administración de este grupo.');
-      return true;
-    } catch (e: any) {
-      Alert.alert('Aviso', e.response?.data?.error || e.message);
-      return false;
-    }
-  };
-
-  const removeMemberHandler = async (memberId: string) => {
-    if (!user?.uid) return false;
-    try {
-      await removeMemberUC.execute(groupId, memberId, user.uid);
-      Alert.alert('Éxito', 'Miembro eliminado.');
+  const handleProcessRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
+    const success = await processRequest(groupId, requestId, status);
+    if (success) {
+      fetchRequests();
       fetchDetail();
-      return true;
-    } catch (e: any) {
-      Alert.alert('Error', 'Ya enviaste una solicitud para este grupo.');
-      return false;
     }
+    return success;
   };
 
-  const addMemberToGroup = async (userId: string) => {
-    try {
-      const success = await addMember.execute(groupId, userId);
-      if (success) fetchDetail();
-      return success;
-    } catch (e) {
-      console.error('Error al añadir miembro:', e);
-      return false;
-    }
+  const handleTransferAdmin = async (newAdminId: string) => await transferAdmin(groupId, newAdminId);
+
+  const handleRemoveMember = async (memberId: string) => {
+    const success = await removeMember(groupId, memberId);
+    if (success) fetchDetail();
+    return success;
   };
 
-  const leaveGroupHandler = async () => {
-    if (!user?.uid) return false;
-    try {
-      const success = await leaveGroupUC.execute(groupId, user.uid);
-      if (success) {
-        Alert.alert('Éxito', 'Has salido del grupo.');
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.error(e);
-      return false;
-    }
+  const handleAddMember = async (userId: string) => {
+    const success = await addMemberToGroup(groupId, userId);
+    if (success) fetchDetail();
+    return success;
   };
+
+  const handleLeaveGroup = async () => await leaveGroup(groupId);
 
   const isAdmin = group?.members?.some((m: any) => m.id === user?.uid && m.role === 'admin');
   const isMember = group?.members?.some((m: any) => m.id === user?.uid);
 
   return {
     group,
-    setGroup,
     requests,
     loading,
     isAdmin,
@@ -139,11 +81,11 @@ export const useGroupDetail = (groupId: string) => {
     user,
     fetchDetail,
     fetchRequests,
-    joinGroup,
-    processRequest,
-    transferAdmin: transferAdminHandler,
-    removeMember: removeMemberHandler,
-    addMemberToGroup,
-    leaveGroup: leaveGroupHandler,
+    joinGroup: handleJoin,
+    processRequest: handleProcessRequest,
+    transferAdmin: handleTransferAdmin,
+    removeMember: handleRemoveMember,
+    addMemberToGroup: handleAddMember,
+    leaveGroup: handleLeaveGroup,
   };
 };
