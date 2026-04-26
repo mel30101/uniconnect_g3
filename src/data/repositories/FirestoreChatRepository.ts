@@ -36,11 +36,16 @@ export class FirestoreChatRepository implements IChatRepository {
 
     const formData = new FormData();
     formData.append('senderId', senderId);
-    formData.append('file', {
-      uri,
-      name,
-      type,
-    } as any);
+    
+    if (file.file) {
+      formData.append('file', file.file);
+    } else {
+      formData.append('file', {
+        uri,
+        name,
+        type,
+      } as any);
+    }
 
     await apiClient.post(`/api/chat/${chatId}/files`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

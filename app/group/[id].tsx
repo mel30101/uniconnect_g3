@@ -3,7 +3,7 @@ import { useSearchStudents } from "@/src/presentation/hooks/useSearchStudents";
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View, Platform } from 'react-native';
 import { UCaldasTheme } from '../constants/Colors';
 import { styles } from './GroupDetailStyles';
 import { AddMemberModal } from '../../src/presentation/components/groups/AddMemberModal';
@@ -34,16 +34,24 @@ export default function GroupDetailScreen() {
     };
 
     const handleLeaveGroup = () => {
-        Alert.alert("Salir del grupo", "¿Estás seguro de que quieres salir?", [
-            { text: "Cancelar", style: "cancel" },
-            { 
-                text: "Sí, salir", style: "destructive", 
-                onPress: async () => {
-                    const success = await groupActions.leaveGroup();
+        if (Platform.OS === 'web') {
+            if (window.confirm("¿Estás seguro de que quieres salir del grupo?")) {
+                groupActions.leaveGroup().then((success: boolean) => {
                     if (success) router.replace('/(tabs)/home');
-                } 
+                });
             }
-        ]);
+        } else {
+            Alert.alert("Salir del grupo", "¿Estás seguro de que quieres salir?", [
+                { text: "Cancelar", style: "cancel" },
+                { 
+                    text: "Sí, salir", style: "destructive", 
+                    onPress: async () => {
+                        const success = await groupActions.leaveGroup();
+                        if (success) router.replace('/(tabs)/home');
+                    } 
+                }
+            ]);
+        }
     };
 
     if (loading && !group) return (

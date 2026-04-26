@@ -77,6 +77,18 @@ export default function TabLayout() {
         options={{
           title: 'Grupos',
           tabBarIcon: ({ color }) => <Ionicons name="people" size={24} color={color} />,
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image
+                source={{ uri: 'https://www.ucaldas.edu.co/portal/wp-content/uploads/2023/06/Logo_80_anos_Universidad_de_Caldas_Blanco.png' }}
+                style={{ width: 70, height: 50, marginRight: 10 }}
+                resizeMode="contain"
+              />
+              <Text style={{ color: UCaldasTheme.blanco, fontSize: 18, fontWeight: 'bold' }}>
+                UniConnect G3
+              </Text>
+            </View>
+          ),
         }}
       />
 

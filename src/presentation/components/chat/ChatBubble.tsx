@@ -1,5 +1,5 @@
 import UCaldasTheme from '@/app/constants/Colors';
-import { Pressable, Text, View, Alert, ActivityIndicator } from 'react-native';
+import { Pressable, Text, View, Alert, ActivityIndicator, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
@@ -10,6 +10,11 @@ export default function ChatBubble({ message, isOwn }: any) {
 
   const handleDownload = async () => {
     if (!message.fileUrl) return;
+
+    if (Platform.OS === 'web') {
+      window.open(message.fileUrl, '_blank');
+      return;
+    }
 
     try {
       setDownloading(true);

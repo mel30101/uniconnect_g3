@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   setUser: (user: User | null) => void;
   logout: () => void;
+  refreshSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -15,10 +16,34 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setUser: (user) => set({ user }),
       logout: () => set({ user: null }),
+      refreshSession: async () => {
+        console.log("[AuthStore] refreshSession called.");
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
+
+          const res = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/auth/me`, {
+            credentials: 'include',
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          console.log("[AuthStore] fetch response status:", res.status);
+          if (res.ok) {
+            const data = await res.json();
+            set({ user: data });
+          } else {
+            set({ user: null });
+          }
+        } catch (error) {
+          console.error("[AuthStore] Error refreshing session:", error);
+          set({ user: null });
+        }
+      }
     }),
     {
-      name: 'auth-storage', // Nombre único para la llave en el dispositivo
-      storage: createJSONStorage(() => AsyncStorage), // Usar AsyncStorage en React Native
+      name: 'auth-storage',
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

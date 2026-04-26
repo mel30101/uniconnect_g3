@@ -2,7 +2,7 @@ import { getOrCreateChat } from '@/src/di/container';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View, Platform } from 'react-native';
 import { UCaldasTheme } from '../../../../app/constants/Colors';
 import { styles } from './GroupDetailStyles';
 
@@ -10,20 +10,34 @@ export const MembersList = ({ group, isAdmin, isMember, user, groupActions }: an
     const router = useRouter();
 
     const confirmTransfer = (member: any) => {
-        Alert.alert("Ceder cargo", `¿Ceder administración a ${member.name}?`, [
-            { text: "Cancelar", style: "cancel" },
-            { text: "Aceptar", style: "destructive", onPress: async () => {
-                const success = await groupActions.transferAdmin(member.id);
-                if (success) router.back();
-            }}
-        ]);
+        if (Platform.OS === 'web') {
+            if (window.confirm(`¿Estás seguro de ceder la administración a ${member.name}? Perderás tus privilegios de administrador.`)) {
+                groupActions.transferAdmin(member.id).then((success: boolean) => {
+                    if (success) router.back();
+                });
+            }
+        } else {
+            Alert.alert("Ceder cargo", `¿Ceder administración a ${member.name}?`, [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Aceptar", style: "destructive", onPress: async () => {
+                    const success = await groupActions.transferAdmin(member.id);
+                    if (success) router.back();
+                }}
+            ]);
+        }
     };
 
     const confirmRemove = (member: any) => {
-        Alert.alert("Eliminar miembro", `¿Eliminar a ${member.name} del grupo?`, [
-            { text: "Cancelar", style: "cancel" },
-            { text: "Eliminar", style: "destructive", onPress: () => groupActions.removeMember(member.id) }
-        ]);
+        if (Platform.OS === 'web') {
+            if (window.confirm(`¿Eliminar a ${member.name} del grupo?`)) {
+                groupActions.removeMember(member.id);
+            }
+        } else {
+            Alert.alert("Eliminar miembro", `¿Eliminar a ${member.name} del grupo?`, [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Eliminar", style: "destructive", onPress: () => groupActions.removeMember(member.id) }
+            ]);
+        }
     };
 
     const openChat = async (member: any) => {

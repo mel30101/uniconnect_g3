@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Collapsible } from '../common/Collapsible';
 import { profileStyles as styles } from './ProfileStyles';
+import apiClient from '../../../data/sources/ApiClient';
 
 interface SelectorProps {
     label: string;
@@ -65,27 +66,23 @@ interface Props {
 }
 
 export const AcademicHierarchySelector = ({ profileData, setProfileData, updateCareer }: Props) => {
-    const [faculties, setFaculties] = useState([]);
-    const [academicLevels, setAcademicLevels] = useState([]);
-    const [formationLevels, setFormationLevels] = useState([]);
-    const [careers, setCareers] = useState([]);
-
-    const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+    const [faculties, setFaculties] = useState<{ id: string; name: string }[]>([]);
+    const [academicLevels, setAcademicLevels] = useState<{ id: string; name: string }[]>([]);
+    const [formationLevels, setFormationLevels] = useState<{ id: string; name: string }[]>([]);
+    const [careers, setCareers] = useState<{ id: string; name: string }[]>([]);
 
     // Load faculties on mount
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/hierarchy/faculties`)
-            .then(res => res.json())
-            .then(setFaculties)
+        apiClient.get<{ id: string; name: string }[]>('/api/hierarchy/faculties')
+            .then(res => setFaculties(res.data))
             .catch(console.error);
     }, []);
 
     // Load levels when faculty changes
     useEffect(() => {
         if (profileData.facultyId) {
-            fetch(`${BACKEND_URL}/api/hierarchy/academic-levels/${profileData.facultyId}`)
-                .then(res => res.json())
-                .then(setAcademicLevels)
+            apiClient.get<{ id: string; name: string }[]>(`/api/hierarchy/academic-levels/${profileData.facultyId}`)
+                .then(res => setAcademicLevels(res.data))
                 .catch(console.error);
         } else {
             setAcademicLevels([]);
@@ -95,9 +92,8 @@ export const AcademicHierarchySelector = ({ profileData, setProfileData, updateC
     // Load formation levels when academic level changes
     useEffect(() => {
         if (profileData.facultyId && profileData.academicLevelId) {
-            fetch(`${BACKEND_URL}/api/hierarchy/formation-levels/${profileData.facultyId}/${profileData.academicLevelId}`)
-                .then(res => res.json())
-                .then(setFormationLevels)
+            apiClient.get<{ id: string; name: string }[]>(`/api/hierarchy/formation-levels/${profileData.facultyId}/${profileData.academicLevelId}`)
+                .then(res => setFormationLevels(res.data))
                 .catch(console.error);
         } else {
             setFormationLevels([]);
@@ -107,9 +103,8 @@ export const AcademicHierarchySelector = ({ profileData, setProfileData, updateC
     // Load careers when formation level changes
     useEffect(() => {
         if (profileData.facultyId && profileData.academicLevelId && profileData.formationLevelId) {
-            fetch(`${BACKEND_URL}/api/hierarchy/careers-by-path/${profileData.facultyId}/${profileData.academicLevelId}/${profileData.formationLevelId}`)
-                .then(res => res.json())
-                .then(setCareers)
+            apiClient.get<{ id: string; name: string }[]>(`/api/hierarchy/careers-by-path/${profileData.facultyId}/${profileData.academicLevelId}/${profileData.formationLevelId}`)
+                .then(res => setCareers(res.data))
                 .catch(console.error);
         } else {
             setCareers([]);

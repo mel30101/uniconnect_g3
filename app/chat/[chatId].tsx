@@ -1,7 +1,7 @@
 import { useChat } from '@/src/presentation/hooks/useChat';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { FlatList, Image, Keyboard, KeyboardAvoidingView, Text, View } from 'react-native';
 import ChatBubble from '@/src/presentation/components/chat/ChatBubble';
 import MessageInput from '@/src/presentation/components/chat/MessageInput';
@@ -10,6 +10,7 @@ import UCaldasTheme from '../constants/Colors';
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const { messages, otherUserName, user } = useChat(chatId);
+  const flatListRef = useRef<FlatList>(null);
 
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const headerHeight = useHeaderHeight();
@@ -56,10 +57,11 @@ export default function ChatScreen() {
         keyboardVerticalOffset={70}
       >
         <FlatList
-          data={messages}
+          ref={flatListRef}
+          data={[...messages].reverse()}
           keyExtractor={item => item.id}
-          inverted={false}
-          contentContainerStyle={{ paddingBottom: 10, flexGrow: 1, justifyContent: 'flex-end' }}
+          inverted={true}
+          contentContainerStyle={{ paddingBottom: 10, paddingTop: 10 }}
           renderItem={({ item }) => (
             <ChatBubble
               message={item}

@@ -20,6 +20,7 @@ export default function SearchScreen() {
     const [hasSearched, setHasSearched] = useState(false);
 
     const isSelectingFromDropdown = useRef(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const sections = useMemo(() => [
         {
@@ -28,6 +29,14 @@ export default function SearchScreen() {
             subjects: userSubjects
         }
     ], [userSubjects]);
+
+    // Carga inicial de todos los grupos de las materias del usuario
+    useEffect(() => {
+        if (user?.uid && isInitialLoad) {
+            performSearch("", undefined, user?.subjects);
+            setIsInitialLoad(false);
+        }
+    }, [user?.uid, isInitialLoad, user?.subjects]);
 
     useEffect(() => {
         if (isSelectingFromDropdown.current) {
@@ -38,14 +47,20 @@ export default function SearchScreen() {
         if (search.length >= 3) {
             setShowDropdown(true);
             performSearch(search, selectedMateria || undefined, user?.subjects);
+        } else if (search.length === 0 && !selectedMateria) {
+            setShowDropdown(false);
+            performSearch("", undefined, user?.subjects);
+            setHasSearched(false);
         } else {
             setShowDropdown(false);
-            if (search.length === 0 && !selectedMateria) {
-                resetResults();
-                setHasSearched(false);
-            }
         }
     }, [search, selectedMateria, user?.subjects]);
+
+    const sortedGroups = useMemo(() => {
+        return [...groups]
+            .filter(g => g.creatorId !== user?.uid) // Ya lo hace el backend, pero por seguridad
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [groups, user?.uid]);
 
     const handleSearch = (term?: string) => {
         const finalTerm = term !== undefined ? term : search;
@@ -191,7 +206,7 @@ export default function SearchScreen() {
             )}
 
             <FlatList
-                data={groups}
+                data={sortedGroups}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => <GroupCard group={{
                     ...item,
