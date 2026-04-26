@@ -80,6 +80,16 @@ export default function GroupDetailScreen() {
                 
                 <GroupInfo group={group} isAdmin={isAdmin} />
                 
+                {isMember && (
+                    <TouchableOpacity 
+                        style={[styles.actionButton, { backgroundColor: UCaldasTheme.azulOscuro, marginTop: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} 
+                        onPress={() => router.push(`/group/chat/${id}`)}
+                    >
+                        <Ionicons name="chatbubbles-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Ingresar al Chat del Grupo</Text>
+                    </TouchableOpacity>
+                )}
+                
                 <MembersList 
                     group={group} 
                     isAdmin={isAdmin} 

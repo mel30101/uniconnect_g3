@@ -7,5 +7,7 @@ export interface Message {
   fileName?: string;
   fileType?: string;
   fileSize?: number;
+  hasMention?: boolean;
+  mentionedUserIds?: string[];
   createdAt: any;
 }

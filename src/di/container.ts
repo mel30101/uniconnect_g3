@@ -1,6 +1,7 @@
 // === Repositorios ===
 import { ApiGroupRepository } from '../data/repositories/ApiGroupRepository';
 import { FirestoreChatRepository } from '../data/repositories/FirestoreChatRepository';
+import { FirestoreGroupChatRepository } from '../data/repositories/FirestoreGroupChatRepository';
 import { ApiProfileRepository } from '../data/repositories/ApiProfileRepository';
 import { ApiSearchRepository } from '../data/repositories/ApiSearchRepository';
 import { ApiEventRepository } from '../data/repositories/ApiEventRepository';
@@ -22,6 +23,8 @@ import { GetAvailableStudents } from '../application/use-cases/group/GetAvailabl
 import { SendMessage } from '../application/use-cases/chat/SendMessage';
 import { SendFileMessage } from '../application/use-cases/chat/SendFileMessage';
 import { GetOrCreateChat } from '../application/use-cases/chat/GetOrCreateChat';
+import { SendGroupMessage } from '../application/use-cases/chat/SendGroupMessage';
+import { SendGroupFileMessage } from '../application/use-cases/chat/SendGroupFileMessage';
 
 // === Use Cases: Profile ===
 import { GetProfile } from '../application/use-cases/profile/GetProfile';
@@ -42,6 +45,7 @@ import { GetSubjects } from '../application/use-cases/academic/GetSubjects';
 // ─── Instancias de Repositorios ─────────────────────────────────────
 const groupRepo = new ApiGroupRepository();
 const chatRepo = new FirestoreChatRepository();
+const groupChatRepo = new FirestoreGroupChatRepository();
 const profileRepo = new ApiProfileRepository();
 const searchRepo = new ApiSearchRepository();
 const eventRepo = new ApiEventRepository();
@@ -64,6 +68,8 @@ export const getAvailableStudents = new GetAvailableStudents(groupRepo);
 export const sendMessage = new SendMessage(chatRepo);
 export const sendFileMessage = new SendFileMessage(chatRepo);
 export const getOrCreateChat = new GetOrCreateChat(chatRepo);
+export const sendGroupMessage = new SendGroupMessage(groupChatRepo);
+export const sendGroupFileMessage = new SendGroupFileMessage(groupChatRepo);
 
 // Profile
 export const getProfile = new GetProfile(profileRepo, academicRepo);
@@ -82,4 +88,4 @@ export const getCareerStructure = new GetCareerStructure(academicRepo);
 export const getSubjects = new GetSubjects(academicRepo);
 
 // Re-export del chat repo para suscripciones directas en hooks
-export { chatRepo };
+export { chatRepo, groupChatRepo };
