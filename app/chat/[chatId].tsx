@@ -10,7 +10,6 @@ import UCaldasTheme from '../constants/Colors';
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const { messages, otherUserName, user } = useChat(chatId);
-  const flatListRef = useRef<FlatList>(null);
 
   const flatListRef = useRef<FlatList>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
