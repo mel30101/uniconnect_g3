@@ -12,6 +12,7 @@ export default function ChatScreen() {
   const { messages, otherUserName, user } = useChat(chatId);
   const flatListRef = useRef<FlatList>(null);
 
+  const flatListRef = useRef<FlatList>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const headerHeight = useHeaderHeight();
 
@@ -24,18 +25,18 @@ export default function ChatScreen() {
       hideSub.remove();
     };
   }, []);
-    
+
   return (
     <>
       <Stack.Screen
         options={{
-          headerShown: true, 
-          title: '', 
+          headerShown: true,
+          title: '',
           headerStyle: {
             backgroundColor: UCaldasTheme.azulOscuro,
           },
-          headerTintColor: '#fff', 
-          headerTitleAlign: 'left', 
+          headerTintColor: '#fff',
+          headerTitleAlign: 'left',
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Image
@@ -58,7 +59,9 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={flatListRef}
-          data={[...messages].reverse()}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          data={messages}
           keyExtractor={item => item.id}
           inverted={true}
           contentContainerStyle={{ paddingBottom: 10, paddingTop: 10 }}
