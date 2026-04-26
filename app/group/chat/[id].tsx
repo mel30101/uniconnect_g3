@@ -1,12 +1,13 @@
 import { useGroupChat } from '@/src/presentation/hooks/useGroupChat';
 import { useGroupDetail } from '@/src/presentation/hooks/useGroupDetail';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Text, View } from 'react-native';
 import ChatBubble from '@/src/presentation/components/chat/ChatBubble';
 import GroupMessageInput from '@/src/presentation/components/chat/GroupMessageInput';
 import UCaldasTheme from '../../constants/Colors';
+import { getOrCreateChat } from '@/src/di/container';
 
 export default function GroupChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function GroupChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const headerHeight = useHeaderHeight();
+  const router = useRouter();
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
@@ -26,6 +28,16 @@ export default function GroupChatScreen() {
       hideSub.remove();
     };
   }, []);
+
+  const handlePrivateMessage = async (targetUserId: string) => {
+    if (!user?.uid) return;
+    try {
+      const chatId = await getOrCreateChat.execute(user.uid, targetUserId);
+      router.push(`/chat/${chatId}`);
+    } catch (e) {
+      console.error("No se pudo iniciar chat privado", e);
+    }
+  };
 
   return (
     <>
@@ -38,6 +50,7 @@ export default function GroupChatScreen() {
           },
           headerTintColor: '#fff',
           headerTitleAlign: 'left',
+          headerBackTitle: 'Volver',
         }}
       />
 
@@ -48,12 +61,10 @@ export default function GroupChatScreen() {
       >
         <FlatList
           ref={flatListRef}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          data={messages}
+          data={[...messages].reverse()}
           keyExtractor={item => item.id}
-          inverted={false}
-          contentContainerStyle={{ paddingBottom: 10, flexGrow: 1, justifyContent: 'flex-end' }}
+          inverted={true}
+          contentContainerStyle={{ paddingBottom: 10, paddingTop: 10 }}
           renderItem={({ item }) => {
             const isOwn = item.senderId === user?.uid;
             const isMentioned = !!(item.hasMention && user?.uid && item.mentionedUserIds?.includes(user.uid));
@@ -74,6 +85,7 @@ export default function GroupChatScreen() {
                 isOwn={isOwn}
                 senderName={senderName}
                 isMentioned={isMentioned}
+                onPrivateMessage={handlePrivateMessage}
               />
             );
           }}

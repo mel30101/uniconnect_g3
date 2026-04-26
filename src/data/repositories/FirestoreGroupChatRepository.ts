@@ -22,14 +22,18 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
     const name: string = f.name || 'archivo_uniconnect';
     const type: string = f.mimeType || f.type || 'application/octet-stream';
 
-    // Se usa any o FormData según TS de ReactNative
     const formData = new FormData();
     formData.append('senderId', senderId);
-    formData.append('file', {
-      uri,
-      name,
-      type,
-    } as any);
+
+    if (file.file) {
+      formData.append('file', file.file);
+    } else {
+      formData.append('file', {
+        uri,
+        name,
+        type,
+      } as any);
+    }
 
     await apiClient.post(`/api/group-chats/${groupId}/files`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -39,7 +43,7 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
   subscribeToGroupMessages(groupId: string, callback: (messages: Message[]) => void): () => void {
     const q = query(
       collection(db, 'groups', groupId, 'messages'),
-      orderBy('createdAt', 'asc') // Ojo: si hay index faltante puede fallar nativo, pero 'createdAt' a veces pasa
+      orderBy('createdAt', 'asc')
     );
 
     return onSnapshot(q, (snapshot) => {

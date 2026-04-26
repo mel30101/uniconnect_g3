@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { groupChatRepo } from '../../di/container';
 import { useAuthStore } from '../store/useAuthStore';
 import { Message } from '../../domain/entities/Message';
 import { sendGroupMessage as sendGroupMessageUC, sendGroupFileMessage as sendGroupFileMessageUC } from '../../di/container';
+import { groupChatRepo } from '../../di/container';
 
 export const useGroupChat = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
@@ -11,10 +11,11 @@ export const useGroupChat = (groupId: string) => {
   useEffect(() => {
     if (!groupId) return;
 
-    // Suscribirse a mensajes
     const unsubscribe = groupChatRepo.subscribeToGroupMessages(groupId, setMessages);
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, [groupId]);
 
   const sendMessage = async (text: string) => {

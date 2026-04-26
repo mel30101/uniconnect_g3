@@ -58,9 +58,7 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={flatListRef}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          data={messages}
+          data={[...messages].reverse()}
           keyExtractor={item => item.id}
           inverted={true}
           contentContainerStyle={{ paddingBottom: 10, paddingTop: 10 }}
