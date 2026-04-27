@@ -1,5 +1,7 @@
 import { Collapsible } from "@/src/presentation/components/common/Collapsible";
 import { useProfile } from "@/src/presentation/hooks/useProfile";
+import { useAuthStore } from "@/src/presentation/store/useAuthStore";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -11,6 +13,14 @@ import { ProfileInfoEdit } from "@/src/presentation/components/profile/ProfileIn
 import { ProfileAcademicEdit } from "@/src/presentation/components/profile/ProfileAcademicEdit";
 
 export default function ProfileScreen() {
+  const logout = useAuthStore((state) => state.logout);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
+  };
+
   const {
     user,
     loading,
@@ -79,6 +89,19 @@ export default function ProfileScreen() {
               style={{ marginRight: 10 }}
             />
             <Text style={styles.editButtonText}>Actualizar Datos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.editButton, { backgroundColor: '#d32f2f', marginTop: 10 }]}
+            onPress={handleLogout}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color="#fff"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={styles.editButtonText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
       ) : (
