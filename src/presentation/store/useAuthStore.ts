@@ -6,7 +6,7 @@ import { User } from '../../domain/entities/User';
 interface AuthState {
   user: User | null;
   setUser: (user: User | null) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
 
@@ -15,7 +15,17 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       setUser: (user) => set({ user }),
-      logout: () => set({ user: null }),
+      logout: async () => {
+        try {
+          await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+        } catch (error) {
+          console.error("[AuthStore] Error logging out:", error);
+        }
+        set({ user: null });
+      },
       refreshSession: async () => {
         console.log("[AuthStore] refreshSession called.");
         try {
