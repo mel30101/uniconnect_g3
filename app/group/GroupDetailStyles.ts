@@ -1,16 +1,19 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { UCaldasTheme } from '../constants/Colors';
 
 export const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fcfcfc' },
+    container: { flex: 1, backgroundColor: Platform.OS === 'web' ? '#f8f9ff' : '#fcfcfc' },
     headerNav: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 10,
+        paddingTop: 20,
         paddingBottom: 15,
-        backgroundColor: '#fcfcfc',
+        backgroundColor: 'transparent',
+        maxWidth: Platform.OS === 'web' ? 800 : undefined,
+        alignSelf: 'center',
+        width: '100%',
     },
     backCircle: {
         width: 45,
@@ -32,7 +35,13 @@ export const styles = StyleSheet.create({
     errorText: { fontSize: 18, color: '#666', marginTop: 10, marginBottom: 20, textAlign: 'center' },
     backButton: { paddingVertical: 10, paddingHorizontal: 20, backgroundColor: UCaldasTheme.azulOscuro, borderRadius: 8},
     backButtonText: { color: '#fff', fontWeight: 'bold' },
-    scrollContent: { padding: 20, paddingTop: 10, },
+    scrollContent: { 
+        padding: 20, 
+        paddingTop: 10,
+        maxWidth: Platform.OS === 'web' ? 800 : undefined,
+        alignSelf: 'center',
+        width: '100%',
+    },
     mainInfoCard: {
         backgroundColor: '#fff',
         borderRadius: 24,
@@ -150,6 +159,9 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 5,
         elevation: 10,
+        maxWidth: Platform.OS === 'web' ? 800 : undefined,
+        alignSelf: 'center',
+        width: '100%',
     },
     requestButton: {
         flexDirection: 'row',
