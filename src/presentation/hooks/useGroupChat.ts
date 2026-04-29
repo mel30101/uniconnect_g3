@@ -12,6 +12,7 @@ export const useGroupChat = (groupId: string) => {
   const { socket } = useSocket();
   const { group } = useGroupDetail(groupId);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (!groupId || !user?.uid || !socket) return;
@@ -58,19 +59,56 @@ export const useGroupChat = (groupId: string) => {
   }, [groupId, user?.uid, socket, group?.members]);
 
   const sendMessage = async (text: string) => {
-    if (!user?.uid) return;
-    await sendGroupMessageUC.execute(groupId, text, user.uid);
+    if (!user?.uid || !socket || isSending) return;
+
+    setIsSending(true);
+    try {
+      // Usar el mecanismo de acknowledgement (reconocimiento) de Socket.io
+      await new Promise<void>((resolve, reject) => {
+        // Timeout de seguridad para evitar bloqueo permanente
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout: El servidor tardó demasiado en responder'));
+        }, 10000);
+
+        socket.emit('send_message', {
+          sender_id: user.uid,
+          group_id: groupId,
+          content: text
+        }, (response: any) => {
+          clearTimeout(timeout);
+          if (response?.success) {
+            resolve();
+          } else {
+            reject(new Error(response?.error || 'Error al enviar mensaje'));
+          }
+        });
+      });
+    } catch (error) {
+      console.error('[Socket] Error al enviar mensaje:', error);
+      // Opcional: Aquí podrías mostrar una notificación de error al usuario
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const sendFileMessage = async (file: any) => {
-    if (!user?.uid) return;
-    await sendGroupFileMessageUC.execute(groupId, user.uid, file);
+    if (!user?.uid || isSending) return;
+    
+    setIsSending(true);
+    try {
+      await sendGroupFileMessageUC.execute(groupId, user.uid, file);
+    } catch (error) {
+      console.error('[HTTP] Error al enviar archivo:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return {
     messages,
     sendMessage,
     sendFileMessage,
+    isSending,
     user,
   };
 };
