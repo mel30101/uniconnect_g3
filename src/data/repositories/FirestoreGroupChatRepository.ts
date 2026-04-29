@@ -13,26 +13,29 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
   }
 
   async sendGroupFileMessage(groupId: string, senderId: string, file: any): Promise<void> {
-    const f = file.uri ? file : file.assets?.[0];
-    if (!f || !f.uri) {
-      throw new Error('Objeto de archivo inválido');
-    }
-
-    const uri: string = f.uri;
-    const name: string = f.name || 'archivo_uniconnect';
-    const type: string = f.mimeType || f.type || 'application/octet-stream';
-
     const formData = new FormData();
     formData.append('senderId', senderId);
 
-    if (file.file) {
-      formData.append('file', file.file);
-    } else {
+    // Caso 1: Es un File nativo del navegador (web)
+    if (typeof File !== 'undefined' && file instanceof File) {
+      formData.append('file', file, file.name);
+    }
+    // Caso 2: Es un objeto con URI (mobile)
+    else if (file && file.uri) {
+      const name: string = file.name || 'archivo_uniconnect';
+      const type: string = file.mimeType || file.type || 'application/octet-stream';
       formData.append('file', {
-        uri,
+        uri: file.uri,
         name,
         type,
       } as any);
+    }
+    // Caso 3: Tiene una propiedad .file (wrapper de DocumentPicker)
+    else if (file && file.file) {
+      formData.append('file', file.file, file.file.name || 'archivo_uniconnect');
+    }
+    else {
+      throw new Error('Objeto de archivo inválido');
     }
 
     await apiClient.post(`/api/group-chats/${groupId}/files`, formData, {
@@ -53,6 +56,9 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
           id: docSnap.id,
           type: data.type ?? 'text',
           ...data,
+          // Normalización: el backend guarda 'content', el UI espera 'text'
+          text: data.text || data.content,
+          senderId: data.senderId || data.sender?.id,
         } as Message;
       });
       callback(messages);

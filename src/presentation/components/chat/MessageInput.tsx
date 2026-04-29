@@ -10,16 +10,23 @@ export default function MessageInput({ chatId }: { chatId: string }) {
   const [text, setText] = useState('');
   const user = useAuthStore(state => state.user);
   const insets = useSafeAreaInsets();
+  const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
-    if (!text.trim() || !user) return;
-    await sendMessageUC.execute(chatId, text, user.uid);
-    setText('');
+    if (!text.trim() || !user || isSending) return;
+    setIsSending(true);
+    try {
+      await sendMessageUC.execute(chatId, text, user.uid);
+      setText('');
+    } catch (error) {
+      console.error('[Chat] Error al enviar mensaje:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const [uploading, setUploading] = useState(false);
   const handlePickFile = async () => {
-    if (!user) return;
+    if (!user || isSending) return;
 
     try {
       const res = await DocumentPicker.getDocumentAsync({
@@ -28,7 +35,7 @@ export default function MessageInput({ chatId }: { chatId: string }) {
       });
 
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        setUploading(true);
+        setIsSending(true);
         const asset = res.assets[0];
 
         let detectedType = asset.mimeType;
@@ -54,7 +61,7 @@ export default function MessageInput({ chatId }: { chatId: string }) {
         Alert.alert("Error", "No se pudo enviar el archivo.");
       }
     } finally {
-      setUploading(false);
+      setIsSending(false);
     }
   };
 
@@ -70,33 +77,52 @@ export default function MessageInput({ chatId }: { chatId: string }) {
     >
       <Pressable
         onPress={handlePickFile}
-        disabled={uploading}
-        style={{ justifyContent: 'center', marginRight: 8, opacity: uploading ? 0.5 : 1 }}
+        disabled={isSending}
+        style={{ justifyContent: 'center', marginRight: 10, opacity: isSending ? 0.5 : 1 }}
       >
-        {uploading ? (
-          <ActivityIndicator size="small" color="#4f46e5" />
-        ) : (
-          <Text style={{ fontSize: 24 }}>📎</Text>
-        )}
+        <Text style={{ fontSize: 24 }}>📎</Text>
       </Pressable>
 
       <TextInput
         style={{
           flex: 1,
           borderWidth: 1,
-          borderRadius: 8,
-          padding: 8,
+          borderRadius: 20,
+          paddingHorizontal: 15,
+          paddingVertical: 8,
           marginRight: 8,
-          backgroundColor: '#fff',
+          backgroundColor: isSending ? '#f0f0f0' : '#fff',
           borderColor: '#e5e7eb',
+          fontSize: 16,
         }}
         value={text}
         onChangeText={setText}
         placeholder="Escribe un mensaje..."
         onSubmitEditing={handleSend}
         blurOnSubmit={false}
+        editable={!isSending}
       />
-      <Button title="Enviar" onPress={handleSend} color="#4f46e5" />
+
+      <Pressable
+        onPress={handleSend}
+        disabled={isSending || !text.trim()}
+        style={({ pressed }) => ({
+          backgroundColor: (isSending || !text.trim()) ? '#a5a2f3' : (pressed ? '#3730a3' : '#4f46e5'),
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          borderRadius: 20,
+          justifyContent: 'center',
+          alignItems: 'center',
+          minWidth: 80,
+          opacity: (isSending || !text.trim()) ? 0.7 : 1,
+        })}
+      >
+        {isSending ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Enviar</Text>
+        )}
+      </Pressable>
     </View>
   );
-}
+}

@@ -18,6 +18,8 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
     }
   };
 
+  // En GroupMessageInput.tsx - Modifica la función handlePickFile
+
   const handlePickFile = async () => {
     if (!user || isSending) return;
 
@@ -30,27 +32,29 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
 
+        // 1. Detectar tipo
         let detectedType = asset.mimeType;
         if (!detectedType && asset.name.toLowerCase().endsWith('.pdf')) {
           detectedType = 'application/pdf';
         }
 
-        const fileToUpload = {
-          uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
-          type: detectedType || 'application/octet-stream',
-          name: asset.name,
-          size: asset.size,
-          file: asset.file
-        };
+        // 2. Construir objeto universal
+        // Si es WEB, el "archivo" es asset.file (el File real del navegador)
+        // Si es MOBILE, es el objeto con URI para el repositorio
+        const fileToUpload = Platform.OS === 'web'
+          ? asset.file  // <--- IMPORTANTE: Pasamos el File puro en Web
+          : {
+            uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+            type: detectedType || 'application/octet-stream',
+            name: asset.name,
+            size: asset.size,
+          };
 
+        console.log("[Chat] Archivo seleccionado:", asset.name);
         await sendFileMessage(fileToUpload);
       }
     } catch (err: any) {
-      console.log("Error al seleccionar archivo:", err);
-      if (Platform.OS === 'web') {
-        const errorMsg = err?.response?.data?.error || err.message || JSON.stringify(err);
-        window.alert(`No se pudo enviar el archivo. Detalle: ${errorMsg}`);
-      }
+      // ... tu lógica de error
     }
   };
 
@@ -92,9 +96,9 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
           blurOnSubmit={false}
           editable={!isSending}
         />
-        
-        <Pressable 
-          onPress={handleSend} 
+
+        <Pressable
+          onPress={handleSend}
           disabled={isSending || !text.trim()}
           style={({ pressed }) => ({
             backgroundColor: (isSending || !text.trim()) ? '#a5a2f3' : (pressed ? '#3730a3' : '#4f46e5'),

@@ -6,6 +6,7 @@ import { groupChatRepo } from '../../di/container';
 
 import { useSocket } from './useSocket';
 import { useGroupDetail } from './useGroupDetail';
+import { Platform } from 'react-native';
 
 export const useGroupChat = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
@@ -29,16 +30,25 @@ export const useGroupChat = (groupId: string) => {
       console.log(`Usuario [${user.uid}] unido a la sala del grupo [${groupId}]`);
 
       // Tarea 2: Listener para nuevos mensajes en tiempo real
-      const handleNewMessage = (newMessage: Message) => {
-        console.log('[Observer] Nuevo mensaje recibido en tiempo real:', newMessage);
+      const handleNewMessage = (payload: any) => {
+        // Normalización: El socket envía 'message_id', 'content' y 'sender.id'
+        const normalizedMessage: Message = {
+          ...payload,
+          id: payload.id || payload.message_id,
+          text: payload.text || payload.content,
+          senderId: payload.senderId || payload.sender?.id,
+          createdAt: payload.createdAt || payload.timestamp,
+        };
+
+        console.log('[Observer] Nuevo mensaje normalizado:', normalizedMessage);
 
         setMessages((prev) => {
-          // Prevención de duplicidad: Verificar por ID
-          const alreadyExists = prev.some((m) => m.id === newMessage.id);
+          // Prevención de duplicidad: Verificar por ID (ahora normalizado)
+          const alreadyExists = prev.some((m) => m.id === normalizedMessage.id);
           if (alreadyExists) return prev;
 
           // Mantener inmutabilidad y orden
-          return [...prev, newMessage];
+          return [...prev, normalizedMessage];
         });
       };
 
@@ -59,33 +69,13 @@ export const useGroupChat = (groupId: string) => {
   }, [groupId, user?.uid, socket, group?.members]);
 
   const sendMessage = async (text: string) => {
-    if (!user?.uid || !socket || isSending) return;
+    if (!user?.uid || isSending) return;
 
     setIsSending(true);
     try {
-      // Usar el mecanismo de acknowledgement (reconocimiento) de Socket.io
-      await new Promise<void>((resolve, reject) => {
-        // Timeout de seguridad para evitar bloqueo permanente
-        const timeout = setTimeout(() => {
-          reject(new Error('Timeout: El servidor tardó demasiado en responder'));
-        }, 10000);
-
-        socket.emit('send_message', {
-          sender_id: user.uid,
-          group_id: groupId,
-          content: text
-        }, (response: any) => {
-          clearTimeout(timeout);
-          if (response?.success) {
-            resolve();
-          } else {
-            reject(new Error(response?.error || 'Error al enviar mensaje'));
-          }
-        });
-      });
+      await sendGroupMessageUC.execute(groupId, text, user.uid);
     } catch (error) {
-      console.error('[Socket] Error al enviar mensaje:', error);
-      // Opcional: Aquí podrías mostrar una notificación de error al usuario
+      console.error('[Chat] Error al enviar mensaje:', error);
     } finally {
       setIsSending(false);
     }
@@ -93,12 +83,20 @@ export const useGroupChat = (groupId: string) => {
 
   const sendFileMessage = async (file: any) => {
     if (!user?.uid || isSending) return;
-    
+
     setIsSending(true);
+    console.log('[HTTP] Preparando envío de archivo:', file.name);
+
     try {
       await sendGroupFileMessageUC.execute(groupId, user.uid, file);
-    } catch (error) {
+
+      console.log('[HTTP] ¡Archivo enviado con éxito!');
+    } catch (error: any) {
       console.error('[HTTP] Error al enviar archivo:', error);
+      // Opcional: mostrar alerta si el error viene del repo
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${error.message || 'Objeto de archivo no soportado'}`);
+      }
     } finally {
       setIsSending(false);
     }
