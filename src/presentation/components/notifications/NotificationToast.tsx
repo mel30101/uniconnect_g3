@@ -1,13 +1,22 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, CheckCircle, AlertTriangle, XCircle, X } from 'lucide-react';
+import { User, CheckCircle, AlertTriangle, XCircle, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { AppNotification } from '../../../domain/entities/AppNotification';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { respondToAdminTransfer } from '../../../di/container';
 import { useAuthStore } from '../../store/useAuthStore';
 import { UCaldasTheme } from '@/app/constants/Colors';
+
+// Importación condicional para evitar errores en Native
+let motion: any = View;
+let AnimatePresence: any = React.Fragment;
+
+if (Platform.OS === 'web') {
+  const fm = require('framer-motion');
+  motion = fm.motion;
+  AnimatePresence = fm.AnimatePresence;
+}
 
 interface ToastProps {
   notification: AppNotification;
@@ -72,61 +81,36 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
 
   const typeConfig = config[notification.type as keyof typeof config] || config.join_request;
 
+  const MotionView = Platform.OS === 'web' ? motion.div : View;
+
   return (
-    <motion.div
+    <MotionView
       initial={{ opacity: 0, x: 50, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 20, scale: 0.95 }}
-      style={{
-        width: 380,
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        marginBottom: 12,
-        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-        borderLeft: `8px solid ${typeConfig.borderColor}`,
-        overflow: 'hidden',
-        pointerEvents: 'auto',
-      }}
+      style={[styles.toastContainer, { borderLeftColor: typeConfig.borderColor }]}
     >
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'row', alignItems: 'flex-start' }}>
-        <View style={{ marginRight: 12, marginTop: 2 }}>{typeConfig.icon}</View>
-        
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>{typeConfig.icon}</View>
+
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 }}>
-            {typeConfig.title}
-          </Text>
-          <Text style={{ fontSize: 14, color: '#4a4a4a', lineHeight: 20 }}>
-            {notification.message}
-          </Text>
-          
-          <View style={{ flexDirection: 'row', marginTop: 12, gap: 10 }}>
+          <Text style={styles.title}>{typeConfig.title}</Text>
+          <Text style={styles.message}>{notification.message}</Text>
+
+          <View style={styles.actionRow}>
             {notification.type === 'join_request' && (
-              <TouchableOpacity
-                onPress={handleAction}
-                style={{
-                  backgroundColor: UCaldasTheme.azulOscuro,
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Ver solicitud</Text>
+              <TouchableOpacity onPress={handleAction} style={styles.primaryButton}>
+                <Text style={styles.buttonText}>Ver solicitud</Text>
               </TouchableOpacity>
             )}
-            
+
             {notification.type === 'admin_transfer' && (
               <>
-                <TouchableOpacity
-                  onPress={() => handleAdminTransfer('accept')}
-                  style={{ backgroundColor: '#28a745', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Aceptar</Text>
+                <TouchableOpacity onPress={() => handleAdminTransfer('accept')} style={styles.successButton}>
+                  <Text style={styles.buttonText}>Aceptar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleAdminTransfer('reject')}
-                  style={{ backgroundColor: '#dc3545', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Rechazar</Text>
+                <TouchableOpacity onPress={() => handleAdminTransfer('reject')} style={styles.dangerButton}>
+                  <Text style={styles.buttonText}>Rechazar</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -136,40 +120,103 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
         <TouchableOpacity onPress={() => removeNotification(notification.id)} style={{ padding: 4 }}>
           <X color="#999" size={20} />
         </TouchableOpacity>
-      </div>
-
-      {/* Barra de progreso animada */}
-      <motion.div 
-        initial={{ width: "100%" }}
-        animate={{ width: "0%" }}
-        transition={{ duration: 5, ease: "linear" }}
-        style={{ height: 4, backgroundColor: typeConfig.borderColor, opacity: 0.3 }}
-      />
-    </motion.div>
+      </View>
+    </MotionView>
   );
 };
 
 export const NotificationStack: React.FC = () => {
   const { notifications } = useNotificationContext();
 
+  if (Platform.OS !== 'web' && notifications.length === 0) return null;
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        zIndex: 999999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        pointerEvents: 'none',
-      }}
-    >
+    <View style={styles.stackContainer}>
       <AnimatePresence mode="popLayout">
-        {notifications.map((notification) => (
+        {notifications.map((notification: any) => (
           <NotificationToast key={notification.id} notification={notification} />
         ))}
       </AnimatePresence>
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  stackContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 9999,
+    width: Platform.OS === 'web' ? 380 : '90%',
+    alignItems: 'flex-end',
+  },
+  toastContainer: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    marginBottom: 10,
+    borderLeftWidth: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+      } as any
+    }),
+  },
+  content: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  iconContainer: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  message: {
+    fontSize: 14,
+    color: '#4a4a4a',
+    lineHeight: 20,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  primaryButton: {
+    backgroundColor: UCaldasTheme.azulOscuro,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  successButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  dangerButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  }
+});

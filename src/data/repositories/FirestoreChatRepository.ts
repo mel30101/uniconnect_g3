@@ -61,10 +61,21 @@ export class FirestoreChatRepository implements IChatRepository {
     return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map((docSnap) => {
         const data = docSnap.data() as any;
+
+        // Extraer datos de archivo desde metadata.archivo (decorador MensajeConArchivo del backend)
+        const archivo = data.metadata?.archivo;
+        const fileUrl = data.fileUrl || archivo?.url || null;
+        const fileName = data.fileName || archivo?.fileName || null;
+        const fileSize = data.fileSize || archivo?.tamano || null;
+
         return {
           id: docSnap.id,
           type: data.type ?? 'text',
           ...data,
+          // Normalizar campos de archivo al nivel raíz para ChatBubble
+          fileUrl,
+          fileName,
+          size: fileSize,
         } as Message;
       });
       callback(messages);

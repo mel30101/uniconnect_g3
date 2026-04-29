@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationContext } from '../context/NotificationContext';
+import { useSocket } from './useSocket';
 
-// Event mappings from Backend to internal types
+// Mapeo de eventos crudos del Backend (Auditables)
 const EVENT_MAP: Record<string, string> = {
   'SOLICITUD_INGRESO': 'SOLICITUD_INGRESO',
   'TRANSFERENCIA_ADMIN_SOLICITADA': 'TRANSFERENCIA_ADMIN_SOLICITADA',
@@ -14,7 +14,7 @@ const EVENT_MAP: Record<string, string> = {
   'TRANSFERENCIA_ADMIN_RECHAZADA': 'TRANSFERENCIA_ADMIN_RECHAZADA',
 };
 
-// Internal friendly types requested by the user
+// Tipos amigables para el Frontend (UI)
 const FRIENDLY_TYPES: Record<string, string> = {
   'SOLICITUD_INGRESO': 'join_request',
   'TRANSFERENCIA_ADMIN_SOLICITADA': 'admin_transfer',
@@ -27,40 +27,17 @@ const FRIENDLY_TYPES: Record<string, string> = {
 
 export const useSocketNotifications = () => {
   const user = useAuthStore((state) => state.user);
-  const { notifications, addNotification, markAsRead, removeNotification, clearAll } = useNotificationContext();
-  const socketRef = useRef<Socket | null>(null);
+  const { addNotification, markAsRead, removeNotification, clearAll } = useNotificationContext();
+  const { socket, isConnected } = useSocket();
 
   useEffect(() => {
-    if (!user?.uid) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      return;
-    }
+    if (!socket || !user?.uid) return;
 
-    // Determine Socket URL. 
-    // In a real environment, this should be the Gateway if it proxies WS, 
-    // or the specific service URL.
-    const socketUrl = process.env.EXPO_PUBLIC_SOCIAL_SERVICE_URL || 'http://localhost:3003';
-
-    console.log(`[Socket] Connecting to ${socketUrl} for user ${user.uid}`);
-
-    const socket = io(socketUrl, {
-      query: { userId: user.uid },
-      transports: ['websocket'], // Ensure websocket transport
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      console.log('[Socket] Connected to notification server');
-    });
-
-    socket.on('notification', (payload: any) => {
+    const handleNotification = (payload: any) => {
       console.log('[Socket] Received notification:', payload);
-
-      const backendType = payload.type;
+      
+      // Validamos contra el EVENT_MAP del backend
+      const backendType = EVENT_MAP[payload.type] || payload.type;
       const friendlyType = FRIENDLY_TYPES[backendType] || backendType;
 
       addNotification({
@@ -72,28 +49,19 @@ export const useSocketNotifications = () => {
           ...payload.data
         }
       });
-    });
+    };
 
-    socket.on('disconnect', () => {
-      console.log('[Socket] Disconnected from notification server');
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error);
-    });
+    socket.on('notification', handleNotification);
 
     return () => {
-      console.log('[Socket] Cleaning up connection');
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('notification', handleNotification);
     };
-  }, [user?.uid, addNotification]);
+  }, [socket, user?.uid, addNotification]);
 
   return {
-    notifications,
     markAsRead,
     removeNotification,
     clearAll,
-    isConnected: socketRef.current?.connected || false,
+    isConnected,
   };
 };

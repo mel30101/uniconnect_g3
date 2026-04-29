@@ -7,20 +7,21 @@ import { Platform } from 'react-native';
 
 export default function GroupMessageInput({ groupId }: { groupId: string }) {
   const [text, setText] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const { sendMessage, sendFileMessage, user } = useGroupChat(groupId);
+  const { sendMessage, sendFileMessage, user, isSending } = useGroupChat(groupId);
   const insets = useSafeAreaInsets();
 
   const handleSend = async () => {
-    if (!user) return;
+    if (!user || isSending) return;
     if (text.trim()) {
       await sendMessage(text);
       setText('');
     }
   };
 
+  // En GroupMessageInput.tsx - Modifica la función handlePickFile
+
   const handlePickFile = async () => {
-    if (!user) return;
+    if (!user || isSending) return;
 
     try {
       const res = await DocumentPicker.getDocumentAsync({
@@ -29,32 +30,31 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
       });
 
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        setUploading(true);
         const asset = res.assets[0];
 
+        // 1. Detectar tipo
         let detectedType = asset.mimeType;
         if (!detectedType && asset.name.toLowerCase().endsWith('.pdf')) {
           detectedType = 'application/pdf';
         }
 
-        const fileToUpload = {
-          uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
-          type: detectedType || 'application/octet-stream',
-          name: asset.name,
-          size: asset.size,
-          file: asset.file
-        };
+        // 2. Construir objeto universal
+        // Si es WEB, el "archivo" es asset.file (el File real del navegador)
+        // Si es MOBILE, es el objeto con URI para el repositorio
+        const fileToUpload = Platform.OS === 'web'
+          ? asset.file  // <--- IMPORTANTE: Pasamos el File puro en Web
+          : {
+            uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+            type: detectedType || 'application/octet-stream',
+            name: asset.name,
+            size: asset.size,
+          };
 
+        console.log("[Chat] Archivo seleccionado:", asset.name);
         await sendFileMessage(fileToUpload);
       }
     } catch (err: any) {
-      console.log("Error al seleccionar archivo:", err);
-      if (Platform.OS === 'web') {
-        const errorMsg = err?.response?.data?.error || err.message || JSON.stringify(err);
-        window.alert(`No se pudo enviar el archivo. Detalle: ${errorMsg}`);
-      }
-    } finally {
-      setUploading(false);
+      // ... tu lógica de error
     }
   };
 
@@ -71,33 +71,52 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
       >
         <Pressable
           onPress={handlePickFile}
-          disabled={uploading}
-          style={{ justifyContent: 'center', marginRight: 8, opacity: uploading ? 0.5 : 1 }}
+          disabled={isSending}
+          style={{ justifyContent: 'center', marginRight: 10, opacity: isSending ? 0.5 : 1 }}
         >
-          {uploading ? (
-            <ActivityIndicator size="small" color="#4f46e5" />
-          ) : (
-            <Text style={{ fontSize: 24 }}>📎</Text>
-          )}
+          <Text style={{ fontSize: 24 }}>📎</Text>
         </Pressable>
 
         <TextInput
           style={{
             flex: 1,
             borderWidth: 1,
-            borderRadius: 8,
-            padding: 8,
+            borderRadius: 20,
+            paddingHorizontal: 15,
+            paddingVertical: 8,
             marginRight: 8,
-            backgroundColor: '#fff',
+            backgroundColor: isSending ? '#f0f0f0' : '#fff',
             borderColor: '#e5e7eb',
+            fontSize: 16,
           }}
           value={text}
           onChangeText={setText}
           placeholder="Escribe un mensaje..."
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
+          editable={!isSending}
         />
-        <Button title="Enviar" onPress={handleSend} color="#4f46e5" />
+
+        <Pressable
+          onPress={handleSend}
+          disabled={isSending || !text.trim()}
+          style={({ pressed }) => ({
+            backgroundColor: (isSending || !text.trim()) ? '#a5a2f3' : (pressed ? '#3730a3' : '#4f46e5'),
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            minWidth: 80,
+            opacity: (isSending || !text.trim()) ? 0.7 : 1,
+          })}
+        >
+          {isSending ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Enviar</Text>
+          )}
+        </Pressable>
       </View>
     </View>
   );

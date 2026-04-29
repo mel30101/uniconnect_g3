@@ -5,7 +5,6 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 600000,
-  withCredentials: true,
   headers: {
     'ngrok-skip-browser-warning': 'true',
     'Content-Type': 'application/json',
