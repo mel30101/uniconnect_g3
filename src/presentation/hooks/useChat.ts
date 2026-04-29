@@ -33,6 +33,15 @@ export const useChat = (chatId: string) => {
     await sendFileMessageUC.execute(chatId, user.uid, file);
   };
 
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    if (!user?.uid) return;
+    try {
+      await chatRepo.addReaction(chatId, messageId, emoji, user.uid);
+    } catch (error) {
+      console.error('[HTTP] Error al reaccionar:', error);
+    }
+  };
+
   const otherUserId = chatDetails?.participants?.find((id: string) => id !== user?.uid);
   const otherUserName = otherUserId && chatDetails?.participantsInfo?.[otherUserId]?.name
     ? chatDetails.participantsInfo[otherUserId].name
@@ -44,6 +53,7 @@ export const useChat = (chatId: string) => {
     otherUserName,
     sendMessage,
     sendFileMessage,
+    handleAddReaction,
     user,
   };
 };

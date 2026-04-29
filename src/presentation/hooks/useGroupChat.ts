@@ -1,104 +1,104 @@
 import { useEffect, useState } from 'react';
+import { groupChatRepo } from '../../di/container';
 import { useAuthStore } from '../store/useAuthStore';
 import { Message } from '../../domain/entities/Message';
-import { sendGroupMessage as sendGroupMessageUC, sendGroupFileMessage as sendGroupFileMessageUC } from '../../di/container';
-import { groupChatRepo } from '../../di/container';
-
-import { useSocket } from './useSocket';
-import { useGroupDetail } from './useGroupDetail';
+import { useSocket } from '../hooks/useSocket';
 import { Platform } from 'react-native';
+import { sendGroupMessage as sendGroupMessageUC, sendGroupFileMessage as sendGroupFileMessageUC } from '../../di/container';
 
 export const useGroupChat = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
-  const { socket } = useSocket();
-  const { group } = useGroupDetail(groupId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const { socket } = useSocket();
 
+  // Efecto 1: Suscripción a Firestore — SIEMPRE se ejecuta, independiente del socket
   useEffect(() => {
-    if (!groupId || !user?.uid || !socket) return;
+    if (!groupId || !user) return;
 
-    // Verify if user is member of the group
-    const isMember = group?.members?.some((m: any) => m.id === user.uid);
+    console.log(`[Firestore] Suscribiendo a mensajes del grupo [${groupId}]`);
+    const unsubscribe = groupChatRepo.subscribeToGroupMessages(groupId, setMessages);
 
-    // Only join if membership is confirmed
-    if (isMember) {
-      console.log(`[Socket] Joining group room: ${groupId} for user ${user.uid}`);
-      socket.emit('join_group', { groupId, userId: user.uid });
+    return () => {
+      unsubscribe();
+    };
+  }, [groupId, user]);
 
-      // Verification log
-      console.log(`Usuario [${user.uid}] unido a la sala del grupo [${groupId}]`);
+  // Efecto 2: Socket — solo se ejecuta cuando el socket está disponible
+  useEffect(() => {
+    if (!groupId || !user || !socket) return;
 
-      // Tarea 2: Listener para nuevos mensajes en tiempo real
-      const handleNewMessage = (payload: any) => {
-        // Normalización: El socket envía 'message_id', 'content' y 'sender.id'
-        const normalizedMessage: Message = {
-          ...payload,
-          id: payload.id || payload.message_id,
-          text: payload.text || payload.content,
-          senderId: payload.senderId || payload.sender?.id,
-          createdAt: payload.createdAt || payload.timestamp,
-        };
+    socket.emit('join_group', { groupId, userId: user.uid });
+    console.log(`[Socket] Usuario [${user.uid}] unido a la sala del grupo [${groupId}]`);
 
-        console.log('[Observer] Nuevo mensaje normalizado:', normalizedMessage);
-
-        setMessages((prev) => {
-          // Prevención de duplicidad: Verificar por ID (ahora normalizado)
-          const alreadyExists = prev.some((m) => m.id === normalizedMessage.id);
-          if (alreadyExists) return prev;
-
-          // Mantener inmutabilidad y orden
-          return [...prev, normalizedMessage];
-        });
+    const handleNewMessage = (payload: any) => {
+      const archivo = payload.metadata?.archivo;
+      const normalizedMessage: Message = {
+        ...payload,
+        id: payload.id || payload.message_id,
+        text: payload.text || payload.content,
+        senderId: payload.senderId || payload.sender?.id,
+        createdAt: payload.createdAt || payload.timestamp,
+        fileUrl: payload.fileUrl || archivo?.url || null,
+        fileName: payload.fileName || archivo?.fileName || null,
+        size: payload.size || payload.fileSize || archivo?.tamano || null,
       };
 
-      socket.on('new_message', handleNewMessage);
+      setMessages((prev) => {
+        const alreadyExists = prev.some((m) => m.id === normalizedMessage.id);
+        if (alreadyExists) return prev;
+        return [...prev, normalizedMessage];
+      });
+    };
 
-      const unsubscribe = groupChatRepo.subscribeToGroupMessages(groupId, setMessages);
+    const handleMessageUpdated = (data: { messageId: string, reacciones: any }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.messageId ? { ...msg, reacciones: data.reacciones } : msg
+        )
+      );
+    };
 
-      return () => {
-        console.log(`[Socket] Leaving group room: ${groupId} and removing listeners`);
-        socket.emit('leave_group', { groupId });
-        socket.off('new_message', handleNewMessage);
-        unsubscribe();
-      };
-    }
+    socket.on('new_message', handleNewMessage);
+    socket.on('message_updated', handleMessageUpdated);
 
-    // Si no es miembro o no se cumple la condición inicial
-    return () => { };
-  }, [groupId, user?.uid, socket, group?.members]);
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('message_updated', handleMessageUpdated);
+      socket.emit('leave_group', { groupId });
+    };
+  }, [groupId, user, socket]);
 
   const sendMessage = async (text: string) => {
-    if (!user?.uid || isSending) return;
-
-    setIsSending(true);
+    if (!user) return;
     try {
       await sendGroupMessageUC.execute(groupId, text, user.uid);
     } catch (error) {
-      console.error('[Chat] Error al enviar mensaje:', error);
+      console.error('[HTTP] Error enviando mensaje grupal:', error);
+    }
+  };
+
+  const sendFileMessage = async (file: any, text?: string) => {
+    if (!user) return;
+    setIsSending(true);
+    try {
+      await sendGroupFileMessageUC.execute(groupId, user.uid, file, text);
+    } catch (error: any) {
+      console.error('[HTTP] Error enviando archivo:', error);
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${error.message || 'Error al subir archivo'}`);
+      }
     } finally {
       setIsSending(false);
     }
   };
 
-  const sendFileMessage = async (file: any) => {
-    if (!user?.uid || isSending) return;
-
-    setIsSending(true);
-    console.log('[HTTP] Preparando envío de archivo:', file.name);
-
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
     try {
-      await sendGroupFileMessageUC.execute(groupId, user.uid, file);
-
-      console.log('[HTTP] ¡Archivo enviado con éxito!');
-    } catch (error: any) {
-      console.error('[HTTP] Error al enviar archivo:', error);
-      // Opcional: mostrar alerta si el error viene del repo
-      if (Platform.OS === 'web') {
-        window.alert(`Error: ${error.message || 'Objeto de archivo no soportado'}`);
-      }
-    } finally {
-      setIsSending(false);
+      await groupChatRepo.addGroupReaction(groupId, messageId, emoji, user.uid);
+    } catch (error) {
+      console.error('[HTTP] Error al reaccionar:', error);
     }
   };
 
@@ -106,6 +106,7 @@ export const useGroupChat = (groupId: string) => {
     messages,
     sendMessage,
     sendFileMessage,
+    handleAddReaction,
     isSending,
     user,
   };

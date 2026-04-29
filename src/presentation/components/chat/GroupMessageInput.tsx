@@ -51,7 +51,8 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
           };
 
         console.log("[Chat] Archivo seleccionado:", asset.name);
-        await sendFileMessage(fileToUpload);
+        await sendFileMessage(fileToUpload, text);
+        setText('');
       }
     } catch (err: any) {
       // ... tu lógica de error
