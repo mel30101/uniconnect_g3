@@ -18,25 +18,43 @@ export const useGroupChat = (groupId: string) => {
 
     // Verify if user is member of the group
     const isMember = group?.members?.some((m: any) => m.id === user.uid);
-    
+
     // Only join if membership is confirmed
     if (isMember) {
       console.log(`[Socket] Joining group room: ${groupId} for user ${user.uid}`);
       socket.emit('join_group', { groupId, userId: user.uid });
 
-      // Verification log as requested
+      // Verification log
       console.log(`Usuario [${user.uid}] unido a la sala del grupo [${groupId}]`);
+
+      // Tarea 2: Listener para nuevos mensajes en tiempo real
+      const handleNewMessage = (newMessage: Message) => {
+        console.log('[Observer] Nuevo mensaje recibido en tiempo real:', newMessage);
+
+        setMessages((prev) => {
+          // Prevención de duplicidad: Verificar por ID
+          const alreadyExists = prev.some((m) => m.id === newMessage.id);
+          if (alreadyExists) return prev;
+
+          // Mantener inmutabilidad y orden
+          return [...prev, newMessage];
+        });
+      };
+
+      socket.on('new_message', handleNewMessage);
+
+      const unsubscribe = groupChatRepo.subscribeToGroupMessages(groupId, setMessages);
+
+      return () => {
+        console.log(`[Socket] Leaving group room: ${groupId} and removing listeners`);
+        socket.emit('leave_group', { groupId });
+        socket.off('new_message', handleNewMessage);
+        unsubscribe();
+      };
     }
 
-    const unsubscribe = groupChatRepo.subscribeToGroupMessages(groupId, setMessages);
-
-    return () => {
-      if (isMember) {
-        console.log(`[Socket] Leaving group room: ${groupId}`);
-        socket.emit('leave_group', { groupId });
-      }
-      unsubscribe();
-    };
+    // Si no es miembro o no se cumple la condición inicial
+    return () => { };
   }, [groupId, user?.uid, socket, group?.members]);
 
   const sendMessage = async (text: string) => {
