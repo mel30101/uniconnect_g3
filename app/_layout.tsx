@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments, useRootNavigationState, usePathname } fr
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { NotificationProvider } from '@/src/presentation/context/NotificationContext';
 import { useSocketNotifications } from '@/src/presentation/hooks/useSocketNotifications';
+import { NotificationStack } from '@/src/presentation/components/notifications/NotificationToast';
 import UCaldasTheme from "@/app/constants/Colors";
 
 function NotificationListener() {
@@ -81,11 +82,12 @@ export default function RootLayout() {
   return (
     <NotificationProvider>
       <NotificationListener />
+      <NotificationStack />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
-          name="chat/[chatId].tsx"
+          name="chat/[chatId]"
           options={{
             headerStyle: { backgroundColor: UCaldasTheme.azulOscuro },
             headerTintColor: '#fff',
