@@ -3,6 +3,7 @@ import { Link, usePathname } from 'expo-router';
 import { Image, Text, View } from 'react-native';
 import { UCaldasTheme } from '@/app/constants/Colors';
 import React from 'react';
+import NotificationCenter from '../notifications/NotificationCenter';
 
 export function WebHeader() {
   const pathname = usePathname();
@@ -15,6 +16,9 @@ export function WebHeader() {
       justifyContent: 'space-between',
       paddingHorizontal: 15,
       paddingVertical: 10,
+      zIndex: 1000,
+      position: 'relative',
+      overflow: 'visible',
     }}>
       {/* Lado izquierdo: Logo, Título y Opciones del Menú */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -48,11 +52,15 @@ export function WebHeader() {
         </View>
       </View>
 
-      {/* Lado derecho: Solo el Perfil */}
-      <Link href="/profile" style={{ flexDirection: 'row', alignItems: 'center', opacity: pathname === '/profile' ? 1 : 0.7 }}>
-        <Ionicons name="person" size={18} color={UCaldasTheme.blanco} style={{ marginRight: 5 }} />
-        <Text style={{ color: UCaldasTheme.blanco, fontWeight: pathname === '/profile' ? 'bold' : 'normal', fontSize: 16 }}>Perfil</Text>
-      </Link>
+      {/* Lado derecho: Notificaciones y Perfil */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <NotificationCenter />
+        
+        <Link href="/profile" style={{ flexDirection: 'row', alignItems: 'center', opacity: pathname === '/profile' ? 1 : 0.7 }}>
+          <Ionicons name="person" size={18} color={UCaldasTheme.blanco} style={{ marginRight: 5 }} />
+          <Text style={{ color: UCaldasTheme.blanco, fontWeight: pathname === '/profile' ? 'bold' : 'normal', fontSize: 16 }}>Perfil</Text>
+        </Link>
+      </View>
     </View>
   );
 }

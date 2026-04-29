@@ -5,14 +5,20 @@ interface NotificationContextType {
   notifications: AppNotification[];
   addNotification: (notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
   removeNotification: (id: string) => void;
   clearAll: () => void;
+  unreadCount: number;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  const unreadCount = useMemo(() => 
+    notifications.filter(n => !n.read).length, 
+  [notifications]);
 
   const addNotification = useCallback((notif: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: AppNotification = {
@@ -30,6 +36,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
   }, []);
 
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+  }, []);
+
   const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
@@ -42,9 +54,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     notifications,
     addNotification,
     markAsRead,
+    markAllAsRead,
     removeNotification,
     clearAll,
-  }), [notifications, addNotification, markAsRead, removeNotification, clearAll]);
+    unreadCount,
+  }), [notifications, addNotification, markAsRead, markAllAsRead, removeNotification, clearAll, unreadCount]);
 
   return (
     <NotificationContext.Provider value={value}>
