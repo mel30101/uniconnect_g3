@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Platform } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState, usePathname } from 'expo-router';
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
+import { NotificationProvider } from '@/src/presentation/context/NotificationContext';
+import { useSocketNotifications } from '@/src/presentation/hooks/useSocketNotifications';
+import { NotificationStack } from '@/src/presentation/components/notifications/NotificationToast';
 import UCaldasTheme from "@/app/constants/Colors";
+
+function NotificationListener() {
+  useSocketNotifications();
+  return null;
+}
 
 export default function RootLayout() {
   const user = useAuthStore((state) => state.user);
@@ -72,17 +80,21 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen
-        name="chat/[chatId].tsx"
-        options={{
-          headerStyle: { backgroundColor: UCaldasTheme.azulOscuro },
-          headerTintColor: '#fff',
-          title: ''
-        }}
-      />
-    </Stack>
+    <NotificationProvider>
+      <NotificationListener />
+      <NotificationStack />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="chat/[chatId]"
+          options={{
+            headerStyle: { backgroundColor: UCaldasTheme.azulOscuro },
+            headerTintColor: '#fff',
+            title: ''
+          }}
+        />
+      </Stack>
+    </NotificationProvider>
   );
-}
+}

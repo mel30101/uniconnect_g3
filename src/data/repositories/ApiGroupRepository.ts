@@ -72,4 +72,9 @@ export class ApiGroupRepository implements IGroupRepository {
       return false;
     }
   }
+
+  async respondToAdminTransfer(groupId: string, candidateId: string, action: 'accept' | 'reject'): Promise<boolean> {
+    const res = await apiClient.post(`/api/groups/${groupId}/admin-transfer/response`, { candidateId, action });
+    return res.status === 200;
+  }
 }
