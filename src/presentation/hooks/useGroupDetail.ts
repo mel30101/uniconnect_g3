@@ -2,14 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiGroupRepository } from '../../data/repositories/ApiGroupRepository';
 import { getGroupDetail as getGroupDetailUC } from '../../di/container';
 import { useAuthStore } from '../store/useAuthStore';
-import { useGroupActions } from './useGroupActions'; 
+import { useGroupActions } from './useGroupActions';
+import { useGroupObserver } from './useGroupObserver';
 
 const groupRepo = new ApiGroupRepository();
 
 export const useGroupDetail = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
   
-  const { joinGroup, processRequest, transferAdmin, removeMember, addMemberToGroup, leaveGroup } = useGroupActions();
+  const { joinGroup, processRequest, transferAdmin, requestAdminTransfer, removeMember, addMemberToGroup, leaveGroup } = useGroupActions();
 
   const [group, setGroup] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
@@ -42,18 +43,33 @@ export const useGroupDetail = (groupId: string) => {
     fetchDetail();
   }, [fetchDetail]);
 
+  // Observer reactivo (Firestore onSnapshot) sobre solicitudes, doc del grupo, miembros y solicitud propia
+  const { requests: liveRequests, pendingTransfer, userRequest } = useGroupObserver(groupId, {
+    enabled: !!groupId && !!user?.uid,
+    currentAdminId: user?.uid,
+    userId: user?.uid,
+    onMembersChanged: () => {
+      // Cualquier cambio en miembros refresca el detalle (nombres resueltos en backend)
+      fetchDetail();
+    },
+  });
+
+  // Reemplazar solicitudes locales por las en vivo cuando lleguen
+  useEffect(() => {
+    setRequests(liveRequests);
+  }, [liveRequests]);
+
   const handleJoin = async () => await joinGroup(groupId);
 
   const handleProcessRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
-    const success = await processRequest(groupId, requestId, status);
-    if (success) {
-      fetchRequests();
-      fetchDetail();
-    }
-    return success;
+    // Observer actualiza la UI; no se requiere refetch manual
+    return await processRequest(groupId, requestId, status);
   };
 
   const handleTransferAdmin = async (newAdminId: string) => await transferAdmin(groupId, newAdminId);
+
+  const handleRequestAdminTransfer = async (candidateId: string) =>
+    await requestAdminTransfer(groupId, candidateId);
 
   const handleRemoveMember = async (memberId: string) => {
     const success = await removeMember(groupId, memberId);
@@ -79,11 +95,14 @@ export const useGroupDetail = (groupId: string) => {
     isAdmin,
     isMember,
     user,
+    pendingTransfer,
+    userRequest,
     fetchDetail,
     fetchRequests,
     joinGroup: handleJoin,
     processRequest: handleProcessRequest,
     transferAdmin: handleTransferAdmin,
+    requestAdminTransfer: handleRequestAdminTransfer,
     removeMember: handleRemoveMember,
     addMemberToGroup: handleAddMember,
     leaveGroup: handleLeaveGroup,

@@ -19,6 +19,7 @@ import { AddMember } from '../application/use-cases/group/AddMember';
 import { LeaveGroup } from '../application/use-cases/group/LeaveGroup';
 import { GetAvailableStudents } from '../application/use-cases/group/GetAvailableStudents';
 import { RespondToAdminTransfer } from '../application/use-cases/group/RespondToAdminTransfer';
+import { RequestAdminTransfer } from '../application/use-cases/group/RequestAdminTransfer';
 
 // === Use Cases: Chat ===
 import { SendMessage } from '../application/use-cases/chat/SendMessage';
@@ -70,6 +71,7 @@ export const addMember = new AddMember(groupRepo);
 export const leaveGroup = new LeaveGroup(groupRepo);
 export const getAvailableStudents = new GetAvailableStudents(groupRepo);
 export const respondToAdminTransfer = new RespondToAdminTransfer(groupRepo);
+export const requestAdminTransfer = new RequestAdminTransfer(groupRepo);
 
 // Chat
 export const sendMessage = new SendMessage(chatRepo);

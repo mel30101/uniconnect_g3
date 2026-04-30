@@ -6,11 +6,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
 import { useNotificationContext } from '../../context/NotificationContext';
+import { useAuthStore } from '../../store/useAuthStore';
+import { respondToAdminTransfer } from '../../../di/container';
 import { UCaldasTheme } from '@/app/constants/Colors';
 
 const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotificationContext();
+  const user = useAuthStore((s) => s.user);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, removeNotification } = useNotificationContext();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -34,6 +37,16 @@ const NotificationCenter = () => {
     if (notification.type === 'join_request' && notification.data?.groupId) {
       router.push(`/group/${notification.data.groupId}/admin` as any);
       setIsOpen(false);
+    }
+  };
+
+  const handleAdminTransfer = async (notif: any, action: 'accept' | 'reject') => {
+    if (!user?.uid || !notif.data?.groupId) return;
+    try {
+      await respondToAdminTransfer.execute(notif.data.groupId, user.uid, action);
+      removeNotification(notif.id);
+    } catch (error) {
+      console.error('Error respondiendo transferencia:', error);
     }
   };
 
@@ -130,6 +143,23 @@ const NotificationCenter = () => {
                       <Text style={styles.itemTime}>
                         {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true, locale: es })}
                       </Text>
+
+                      {notif.type === 'admin_transfer' && (
+                        <View style={styles.actionRow}>
+                          <TouchableOpacity 
+                            style={styles.acceptBtn} 
+                            onPress={(e) => { e.stopPropagation(); handleAdminTransfer(notif, 'accept'); }}
+                          >
+                            <Text style={styles.actionBtnText}>Aceptar</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={styles.rejectBtn} 
+                            onPress={(e) => { e.stopPropagation(); handleAdminTransfer(notif, 'reject'); }}
+                          >
+                            <Text style={styles.actionBtnText}>Rechazar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
 
                     {!notif.read && <View style={styles.unreadDot} />}
@@ -265,6 +295,28 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 13,
     color: '#666',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  acceptBtn: {
+    backgroundColor: '#28a745',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  rejectBtn: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  actionBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   }
 });
 
