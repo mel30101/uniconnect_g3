@@ -10,8 +10,25 @@ import { Ionicons } from '@expo/vector-icons';
 export default function WelcomeScreen() {
   const user = useAuthStore((state) => state.user);
   const userName = user?.name;
-  const { events, categories, loading, loadingCategories, fetchEvents } = useEvents();
+  const {
+    events,
+    categories,
+    subscribedCategoryIds,
+    loading,
+    loadingCategories,
+    submittingSubscription,
+    fetchEvents,
+    toggleSubscription
+  } = useEvents();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+
+  const categoryMap = useMemo(() => {
+    const map: { [key: string]: string } = {};
+    categories.forEach(cat => {
+      map[cat.name] = cat.id;
+    });
+    return map;
+  }, [categories]);
 
   const handleCategorySelect = (categoryId: string) => {
     const newCategory = selectedCategoryId === categoryId ? null : categoryId;
@@ -40,12 +57,41 @@ export default function WelcomeScreen() {
     <EventCard event={item} />
   );
 
-  const renderSectionHeader = ({ section: { title } }: { section: { title: string } }) => (
-    <View style={styles.sectionHeaderContainer}>
-      <View style={styles.sectionHeaderDot} />
-      <Text style={styles.sectionHeaderText}>{title}</Text>
-    </View>
-  );
+  const renderSectionHeader = ({ section: { title } }: { section: { title: string } }) => {
+    const categoryId = categoryMap[title];
+    const isSubscribedToThis = categoryId ? subscribedCategoryIds.includes(categoryId) : false;
+
+    return (
+      <View style={styles.sectionHeaderContainer}>
+        <View style={styles.sectionHeaderTitleWrapper}>
+          <View style={styles.sectionHeaderDot} />
+          <Text style={styles.sectionHeaderText}>{title}</Text>
+        </View>
+        {categoryId && (
+          <TouchableOpacity
+            style={[
+              styles.subscribeButtonInHeader,
+              isSubscribedToThis && styles.unsubscribeButtonInHeader
+            ]}
+            onPress={() => toggleSubscription(categoryId)}
+            disabled={submittingSubscription}
+          >
+            <Ionicons
+              name={isSubscribedToThis ? "notifications-off" : "notifications"}
+              size={14}
+              color={UCaldasTheme.dorado}
+            />
+            <Text style={[
+              styles.subscribeButtonTextInHeader,
+              isSubscribedToThis && styles.unsubscribeButtonTextInHeader
+            ]}>
+              {isSubscribedToThis ? 'Anular' : 'Suscribirse'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   const renderCategoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -179,6 +225,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingVertical: 12,
     marginTop: 5,
+    gap: 15,
+  },
+  sectionHeaderTitleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   sectionHeaderDot: {
     width: 6,
@@ -193,6 +244,30 @@ const styles = StyleSheet.create({
     color: UCaldasTheme.azulOscuro,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  subscribeButtonInHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: UCaldasTheme.dorado,
+    gap: 4
+  },
+  subscribeButtonTextInHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: UCaldasTheme.dorado,
+    textTransform: 'uppercase',
+  },
+  unsubscribeButtonInHeader: {
+    backgroundColor: '#fdfbf7',
+    borderColor: UCaldasTheme.dorado,
+  },
+  unsubscribeButtonTextInHeader: {
+    color: UCaldasTheme.dorado,
   },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 10, color: '#666' },

@@ -14,4 +14,18 @@ export class ApiEventRepository implements IEventRepository {
     const res = await apiClient.get<EventCategory[]>('/api/events/categories');
     return res.data;
   }
+
+  async subscribeToCategory(userId: string, categoryId: string): Promise<void> {
+    await apiClient.post('/api/events/suscribir', { userId, categoryId });
+  }
+
+  async unsubscribeFromCategory(userId: string, categoryId: string): Promise<void> {
+    await apiClient.delete('/api/events/suscribir', { params: { userId, categoryId } });
+  }
+
+  async getSubscribedCategories(userId: string): Promise<string[]> {
+    const res = await apiClient.get<string[]>(`/api/events/suscripciones/${userId}`);
+    return res.data;
+  }
+
 }

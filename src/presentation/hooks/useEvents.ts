@@ -1,27 +1,37 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getEvents, getEventCategories } from '../../di/container';
+import { getEvents, getEventCategories, subscribeToCategory, unsubscribeFromCategory, getSubscribedCategories } from '../../di/container';
 import { Event } from '../../domain/entities/Event';
 import { EventCategory } from '../../domain/entities/EventCategory';
 import { getValidSortedEvents } from '@/utils/dateUtils';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const useEvents = () => {
+  const user = useAuthStore((state) => state.user);
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
+  const [subscribedCategoryIds, setSubscribedCategoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [submittingSubscription, setSubmittingSubscription] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [user?.uid]);
 
   const fetchInitialData = async () => {
     setLoading(true);
     setLoadingCategories(true);
     try {
-      const [eventsData, categoriesData] = await Promise.all([
+      const promises: [Promise<Event[]>, Promise<EventCategory[]>, Promise<string[]>?] = [
         getEvents.execute(),
         getEventCategories.execute()
-      ]);
+      ];
+
+      if (user?.uid) {
+        promises.push(getSubscribedCategories.execute(user.uid));
+      }
+
+      const [eventsData, categoriesData, subscriptionsData] = await Promise.all(promises);
 
       // Ordenar por categoría (type) y luego por fecha
       const sorted = [...eventsData].sort((a, b) => {
@@ -32,6 +42,9 @@ export const useEvents = () => {
 
       setEvents(sorted);
       setCategories(categoriesData);
+      if (subscriptionsData) {
+        setSubscribedCategoryIds(subscriptionsData);
+      }
     } catch (error) {
       console.error('Error cargando los datos iniciales de eventos:', error);
     } finally {
@@ -63,5 +76,35 @@ export const useEvents = () => {
     }
   }, []);
 
-  return { events, categories, loading, loadingCategories, fetchEvents };
+  const toggleSubscription = async (categoryId: string) => {
+    if (!user?.uid) return;
+
+    const isSubscribed = subscribedCategoryIds.includes(categoryId);
+    setSubmittingSubscription(true);
+
+    try {
+      if (isSubscribed) {
+        await unsubscribeFromCategory.execute(user.uid, categoryId);
+        setSubscribedCategoryIds(prev => prev.filter(id => id !== categoryId));
+      } else {
+        await subscribeToCategory.execute(user.uid, categoryId);
+        setSubscribedCategoryIds(prev => [...prev, categoryId]);
+      }
+    } catch (error) {
+      console.error('Error al cambiar la suscripción:', error);
+    } finally {
+      setSubmittingSubscription(false);
+    }
+  };
+
+  return {
+    events,
+    categories,
+    subscribedCategoryIds,
+    loading,
+    loadingCategories,
+    submittingSubscription,
+    fetchEvents,
+    toggleSubscription
+  };
 };
