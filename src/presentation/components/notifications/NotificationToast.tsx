@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { User, CheckCircle, AlertTriangle, XCircle, X } from 'lucide-react-native';
+import { User, CheckCircle, AlertTriangle, XCircle, X, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { AppNotification } from '../../../domain/entities/AppNotification';
@@ -35,8 +35,12 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
   }, [notification.id, removeToast]);
 
   const handleAction = () => {
-    if (notification.type === 'join_request' && notification.data.groupId) {
+    if (notification.type === 'join_request' && notification.data?.groupId) {
       router.push(`/group/${notification.data.groupId}/admin` as any);
+    } else if (notification.type === 'new_event') {
+      router.push('/(tabs)/home' as any);
+    } else if (notification.data?.groupId) {
+      router.push(`/group/${notification.data.groupId}` as any);
     }
     removeToast(notification.id);
   };
@@ -76,6 +80,11 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
       borderColor: '#dc3545',
       icon: <XCircle color="#dc3545" size={22} />,
       title: 'Transferencia Rechazada',
+    },
+    new_event: {
+      borderColor: '#9b59b6',
+      icon: <Calendar color="#9b59b6" size={22} />,
+      title: 'Nuevo Evento',
     }
   };
 
@@ -103,9 +112,9 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
           <Text style={styles.message}>{notification.message}</Text>
 
           <View style={styles.actionRow}>
-            {notification.type === 'join_request' && (
+            {['join_request', 'new_member', 'admin_transfer_accepted', 'admin_assigned', 'new_event'].includes(notification.type) && (
               <TouchableOpacity onPress={handleAction} style={styles.primaryButton}>
-                <Text style={styles.buttonText}>Ver solicitud</Text>
+                <Text style={styles.buttonText}>{notification.type === 'new_event' ? 'Ir al inicio' : (notification.type === 'join_request' ? 'Ver solicitud' : 'Ir al grupo')}</Text>
               </TouchableOpacity>
             )}
 

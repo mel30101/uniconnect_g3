@@ -44,7 +44,7 @@ export const useGroupDetail = (groupId: string) => {
   }, [fetchDetail]);
 
   // Observer reactivo (Firestore onSnapshot) sobre solicitudes, doc del grupo, miembros y solicitud propia
-  const { requests: liveRequests, pendingTransfer, userRequest } = useGroupObserver(groupId, {
+  const { requests: liveRequests, pendingTransfer, userRequest, groupData } = useGroupObserver(groupId, {
     enabled: !!groupId && !!user?.uid,
     currentAdminId: user?.uid,
     userId: user?.uid,
@@ -96,6 +96,7 @@ export const useGroupDetail = (groupId: string) => {
     isMember,
     user,
     pendingTransfer,
+    liveCreatorId: groupData?.creatorId,
     userRequest,
     fetchDetail,
     fetchRequests,

@@ -25,12 +25,13 @@ function timeAgo(dateString: string): string {
 }
 
 const TYPE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
-  join_request:              { icon: 'person-add',       color: '#0056b3',           label: 'Solicitud de Ingreso' },
-  new_member:                { icon: 'checkmark-circle', color: '#28a745',           label: 'Nuevo Miembro' },
-  admin_transfer:            { icon: 'alert-circle',     color: UCaldasTheme.dorado, label: 'Transferencia Admin' },
-  request_rejected:          { icon: 'close-circle',     color: '#dc3545',           label: 'Solicitud Rechazada' },
-  admin_transfer_rejected:   { icon: 'close-circle',     color: '#dc3545',           label: 'Transferencia Rechazada' },
-  admin_transfer_accepted:   { icon: 'checkmark-circle', color: '#28a745',           label: 'Transferencia Aceptada' },
+  join_request: { icon: 'person-add', color: '#0056b3', label: 'Solicitud de Ingreso' },
+  new_member: { icon: 'checkmark-circle', color: '#28a745', label: 'Nuevo Miembro' },
+  admin_transfer: { icon: 'alert-circle', color: UCaldasTheme.dorado, label: 'Transferencia Admin' },
+  request_rejected: { icon: 'close-circle', color: '#dc3545', label: 'Solicitud Rechazada' },
+  admin_transfer_rejected: { icon: 'close-circle', color: '#dc3545', label: 'Transferencia Rechazada' },
+  admin_transfer_accepted: { icon: 'checkmark-circle', color: '#28a745', label: 'Transferencia Aceptada' },
+  new_event: { icon: 'calendar', color: '#9b59b6', label: 'Nuevo Evento' },
 };
 
 const getConfig = (type: string) =>
@@ -51,8 +52,13 @@ export function MobileNotificationsScreen() {
 
   const handlePress = (notif: any) => {
     markAsRead(notif.id);
-    if (notif.type === 'join_request' && notif.data?.groupId) {
-      router.push({ pathname: '/group/[id]', params: { id: notif.data.groupId } });
+    const groupId = notif.data?.groupId;
+    if (notif.type === 'join_request' || notif.type === 'admin_transfer_rejected') {
+      router.push(`/group/${groupId}/admin` as any);
+    } else if (['new_member', 'admin_transfer_accepted', 'admin_assigned'].includes(notif.type)) {
+      router.push(`/group/${groupId}` as any);
+    } else if (notif.type === 'new_event') {
+      router.push('/(tabs)/home' as any);
     }
   };
 

@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Pressable } from 'react-native';
-import { Bell, User, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck } from 'lucide-react';
+import { Bell, User, CheckCircle, AlertTriangle, XCircle, Trash2, CheckCheck, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
+import { doc, updateDoc, deleteDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { db } from '../../../data/sources/FirebaseClient';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { useAuthStore } from '../../store/useAuthStore';
 import { respondToAdminTransfer } from '../../../di/container';
@@ -13,9 +15,43 @@ import { UCaldasTheme } from '@/app/constants/Colors';
 const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, removeNotification } = useNotificationContext();
+  const { notifications, unreadCount, markAsRead: localMarkAsRead, markAllAsRead: localMarkAllAsRead, clearAll: localClearAll, removeNotification: localRemove } = useNotificationContext();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const markAsRead = useCallback(async (id: string) => {
+    localMarkAsRead(id);
+    try { await updateDoc(doc(db, 'notifications', id), { read: true }); } catch (e) { /* noop */ }
+  }, [localMarkAsRead]);
+
+  const markAllAsRead = useCallback(async () => {
+    localMarkAllAsRead();
+    if (!user?.uid) return;
+    try {
+      const q = query(collection(db, 'notifications'), where('targetUserId', '==', user.uid), where('read', '==', false));
+      const snap = await getDocs(q);
+      const batch = writeBatch(db);
+      snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+      await batch.commit();
+    } catch (e) { /* noop */ }
+  }, [localMarkAllAsRead, user?.uid]);
+
+  const removeNotification = useCallback(async (id: string) => {
+    localRemove(id);
+    try { await deleteDoc(doc(db, 'notifications', id)); } catch (e) { /* noop */ }
+  }, [localRemove]);
+
+  const clearAll = useCallback(async () => {
+    localClearAll();
+    if (!user?.uid) return;
+    try {
+      const q = query(collection(db, 'notifications'), where('targetUserId', '==', user.uid));
+      const snap = await getDocs(q);
+      const batch = writeBatch(db);
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    } catch (e) { /* noop */ }
+  }, [localClearAll, user?.uid]);
 
   // Close when clicking outside (Web only logic)
   useEffect(() => {
@@ -34,10 +70,20 @@ const NotificationCenter = () => {
 
   const handleNotificationClick = (notification: any) => {
     markAsRead(notification.id);
-    if (notification.type === 'join_request' && notification.data?.groupId) {
-      router.push(`/group/${notification.data.groupId}/admin` as any);
-      setIsOpen(false);
+    const groupId = notification.data?.groupId;
+    
+    if (groupId) {
+      if (notification.type === 'join_request' || notification.type === 'admin_transfer_rejected') {
+        router.push(`/group/${groupId}/admin` as any);
+      } else if (['new_member', 'admin_transfer_accepted', 'admin_assigned'].includes(notification.type)) {
+        router.push(`/group/${groupId}` as any);
+      }
     }
+    
+    if (notification.type === 'new_event') {
+      router.push('/(tabs)/home' as any);
+    }
+    setIsOpen(false);
   };
 
   const handleAdminTransfer = async (notif: any, action: 'accept' | 'reject') => {
@@ -57,6 +103,7 @@ const NotificationCenter = () => {
       case 'admin_transfer': return <AlertTriangle size={18} color={UCaldasTheme.dorado} />;
       case 'request_rejected':
       case 'admin_transfer_rejected': return <XCircle size={18} color="#dc3545" />;
+      case 'new_event': return <Calendar size={18} color="#9b59b6" />;
       default: return <Bell size={18} color="#666" />;
     }
   };
@@ -64,8 +111,8 @@ const NotificationCenter = () => {
   return (
     <View style={styles.container}>
       {/* Bell Icon & Badge */}
-      <TouchableOpacity 
-        onPress={() => setIsOpen(!isOpen)} 
+      <TouchableOpacity
+        onPress={() => setIsOpen(!isOpen)}
         activeOpacity={0.7}
         style={styles.bellButton}
       >
@@ -135,7 +182,7 @@ const NotificationCenter = () => {
                     <View style={styles.itemIconContainer}>
                       {getIcon(notif.type)}
                     </View>
-                    
+
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.itemMessage, !notif.read && styles.unreadMessage]}>
                         {notif.message}
@@ -146,14 +193,14 @@ const NotificationCenter = () => {
 
                       {notif.type === 'admin_transfer' && (
                         <View style={styles.actionRow}>
-                          <TouchableOpacity 
-                            style={styles.acceptBtn} 
+                          <TouchableOpacity
+                            style={styles.acceptBtn}
                             onPress={(e) => { e.stopPropagation(); handleAdminTransfer(notif, 'accept'); }}
                           >
                             <Text style={styles.actionBtnText}>Aceptar</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity 
-                            style={styles.rejectBtn} 
+                          <TouchableOpacity
+                            style={styles.rejectBtn}
                             onPress={(e) => { e.stopPropagation(); handleAdminTransfer(notif, 'reject'); }}
                           >
                             <Text style={styles.actionBtnText}>Rechazar</Text>
