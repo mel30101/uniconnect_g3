@@ -24,7 +24,7 @@ export class FirestoreChatRepository implements IChatRepository {
     });
   }
 
-  async sendFileMessage(chatId: string, senderId: string, file: any): Promise<void> {
+  async sendFileMessage(chatId: string, senderId: string, file: any, text?: string): Promise<void> {
     const f = file.uri ? file : file.assets?.[0];
     if (!f || !f.uri) {
       throw new Error('Objeto de archivo inválido');
@@ -36,6 +36,9 @@ export class FirestoreChatRepository implements IChatRepository {
 
     const formData = new FormData();
     formData.append('senderId', senderId);
+    if (text) {
+      formData.append('text', text);
+    }
     
     if (file.file) {
       formData.append('file', file.file);
@@ -49,6 +52,13 @@ export class FirestoreChatRepository implements IChatRepository {
 
     await apiClient.post(`/api/chat/${chatId}/files`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  }
+
+  async addReaction(chatId: string, messageId: string, emoji: string, userId: string): Promise<void> {
+    await apiClient.post(`/api/chat/${chatId}/messages/${messageId}/reactions`, {
+      emoji,
+      userId
     });
   }
 

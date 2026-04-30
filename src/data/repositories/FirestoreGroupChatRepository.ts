@@ -12,9 +12,16 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
     });
   }
 
+<<<<<<< HEAD
   async sendGroupFileMessage(groupId: string, senderId: string, file: any): Promise<void> {
+=======
+  async sendGroupFileMessage(groupId: string, senderId: string, file: any, text?: string): Promise<void> {
+>>>>>>> d1d29d3d7b5dd59ba43a81fd3d7cc7b8ac51711b
     const formData = new FormData();
     formData.append('senderId', senderId);
+    if (text) {
+      formData.append('text', text);
+    }
 
     // Caso 1: Es un File nativo del navegador (web)
     if (typeof File !== 'undefined' && file instanceof File) {
@@ -43,6 +50,13 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
     });
   }
 
+  async addGroupReaction(groupId: string, messageId: string, emoji: string, userId: string): Promise<void> {
+    await apiClient.post(`/api/group-chats/${groupId}/messages/${messageId}/reactions`, {
+      emoji,
+      userId
+    });
+  }
+
   subscribeToGroupMessages(groupId: string, callback: (messages: Message[]) => void): () => void {
     const q = query(
       collection(db, 'groups', groupId, 'messages'),
@@ -52,6 +66,13 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
     return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map((docSnap) => {
         const data = docSnap.data() as any;
+
+        // Extraer datos de archivo desde metadata.archivo (decorador MensajeConArchivo del backend)
+        const archivo = data.metadata?.archivo;
+        const fileUrl = data.fileUrl || archivo?.url || null;
+        const fileName = data.fileName || archivo?.fileName || null;
+        const fileSize = data.size || data.fileSize || archivo?.tamano || null;
+
         return {
           id: docSnap.id,
           type: data.type ?? 'text',
@@ -59,6 +80,13 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
           // Normalización: el backend guarda 'content', el UI espera 'text'
           text: data.text || data.content,
           senderId: data.senderId || data.sender?.id,
+<<<<<<< HEAD
+=======
+          // Normalizar campos de archivo al nivel raíz para MensajeFactory/ChatBubble
+          fileUrl,
+          fileName,
+          size: fileSize,
+>>>>>>> d1d29d3d7b5dd59ba43a81fd3d7cc7b8ac51711b
         } as Message;
       });
       callback(messages);

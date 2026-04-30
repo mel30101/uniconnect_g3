@@ -11,7 +11,7 @@ import { getOrCreateChat } from '@/src/di/container';
 
 export default function GroupChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { messages, user } = useGroupChat(id);
+  const { messages, user, handleAddReaction } = useGroupChat(id);
   const { group } = useGroupDetail(id);
 
   const flatListRef = useRef<FlatList>(null);
@@ -86,6 +86,7 @@ export default function GroupChatScreen() {
                 senderName={senderName}
                 isMentioned={isMentioned}
                 onPrivateMessage={handlePrivateMessage}
+                onReaction={handleAddReaction}
               />
             );
           }}

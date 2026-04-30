@@ -1,9 +1,9 @@
 import { IEventRepository } from '../../../domain/repositories/IEventRepository';
 
 export class GetEvents {
-  constructor(private eventRepo: IEventRepository) {}
+  constructor(private eventRepo: IEventRepository) { }
 
-  async execute() {
-    return this.eventRepo.getEvents();
+  async execute(categoryId?: string) {
+    return this.eventRepo.getEvents(categoryId);
   }
 }

@@ -9,7 +9,7 @@ import UCaldasTheme from '../constants/Colors';
 
 export default function ChatScreen() {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
-  const { messages, otherUserName, user } = useChat(chatId);
+  const { messages, otherUserName, user, handleAddReaction } = useChat(chatId);
 
   const flatListRef = useRef<FlatList>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -66,6 +66,7 @@ export default function ChatScreen() {
             <ChatBubble
               message={item}
               isOwn={item.senderId === user?.uid}
+              onReaction={handleAddReaction}
             />
           )}
         />

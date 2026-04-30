@@ -51,7 +51,12 @@ export default function MessageInput({ chatId }: { chatId: string }) {
           file: asset.file
         };
 
+<<<<<<< HEAD
         await sendFileMessageUC.execute(chatId, user.uid, fileToUpload);
+=======
+        await sendFileMessageUC.execute(chatId, user.uid, fileToUpload, text);
+        setText('');
+>>>>>>> d1d29d3d7b5dd59ba43a81fd3d7cc7b8ac51711b
       }
     } catch (err) {
       console.log("Error al seleccionar archivo:", err);
