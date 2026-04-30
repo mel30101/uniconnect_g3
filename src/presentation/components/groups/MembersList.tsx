@@ -19,10 +19,12 @@ export const MembersList = ({ group, isAdmin, isMember, user, groupActions }: an
         } else {
             Alert.alert("Ceder cargo", `¿Ceder administración a ${member.name}?`, [
                 { text: "Cancelar", style: "cancel" },
-                { text: "Aceptar", style: "destructive", onPress: async () => {
-                    const success = await groupActions.transferAdmin(member.id);
-                    if (success) router.back();
-                }}
+                {
+                    text: "Aceptar", style: "destructive", onPress: async () => {
+                        const success = await groupActions.transferAdmin(member.id);
+                        if (success) router.back();
+                    }
+                }
             ]);
         }
     };
@@ -61,7 +63,7 @@ export const MembersList = ({ group, isAdmin, isMember, user, groupActions }: an
                         <TouchableOpacity
                             style={styles.memberInfo}
                             disabled={!isMember}
-                            onPress={() => router.push({ pathname: "/group/member-profile/[userId]", params: { userId: member.id, userName: member.name }})}
+                            onPress={() => router.push({ pathname: "/user/[id]", params: { id: member.id } })}
                         >
                             <Text style={[styles.memberName, isMember && { color: UCaldasTheme.azulOscuro, textDecorationLine: 'underline' }]}>
                                 {member.name}

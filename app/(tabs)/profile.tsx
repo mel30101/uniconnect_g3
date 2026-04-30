@@ -11,6 +11,7 @@ import { ProfileInfoRead } from "@/src/presentation/components/profile/ProfileIn
 import { ProfileAcademicRead } from "@/src/presentation/components/profile/ProfileAcademicRead";
 import { ProfileInfoEdit } from "@/src/presentation/components/profile/ProfileInfoEdit";
 import { ProfileAcademicEdit } from "@/src/presentation/components/profile/ProfileAcademicEdit";
+import { ProfileEnrichedView } from "@/src/presentation/components/profile/ProfileEnrichedView";
 
 export default function ProfileScreen() {
   const logout = useAuthStore((state) => state.logout);
@@ -35,6 +36,9 @@ export default function ProfileScreen() {
     setProfileData,
     updateCareer,
     saveProfile,
+    isFullView,
+    loadingFull,
+    fetchFullProfile,
   } = useProfile();
 
   if (loading) {
@@ -77,6 +81,28 @@ export default function ProfileScreen() {
             profileData={profileData}
             sections={sections}
           />
+
+          {!isFullView ? (
+            <TouchableOpacity
+              style={[styles.editButton, { backgroundColor: UCaldasTheme.dorado, marginTop: 10 }]}
+              onPress={fetchFullProfile}
+              disabled={loadingFull}
+            >
+              {loadingFull ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="stats-chart-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
+                  <Text style={styles.editButtonText}>Ver vista completa</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <ProfileEnrichedView
+              estadisticas={profileData.estadisticas}
+              insignias={profileData.insignias}
+            />
+          )}
 
           <TouchableOpacity
             style={styles.editButton}
@@ -140,8 +166,8 @@ export default function ProfileScreen() {
             </View>
           </Collapsible>
 
-          <TouchableOpacity 
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
             onPress={saveProfile}
             disabled={saving}
           >

@@ -30,6 +30,7 @@ import { SendGroupFileMessage } from '../application/use-cases/chat/SendGroupFil
 
 // === Use Cases: Profile ===
 import { GetProfile } from '../application/use-cases/profile/GetProfile';
+import { GetFullProfile } from '../application/use-cases/profile/GetFullProfile';
 import { SaveProfile } from '../application/use-cases/profile/SaveProfile';
 
 // === Use Cases: Search ===
@@ -82,6 +83,7 @@ export const sendGroupFileMessage = new SendGroupFileMessage(groupChatRepo);
 
 // Profile
 export const getProfile = new GetProfile(profileRepo, academicRepo);
+export const getFullProfile = new GetFullProfile(profileRepo, academicRepo);
 export const saveProfile = new SaveProfile(profileRepo);
 
 // Search
