@@ -136,6 +136,7 @@ export function DesktopAdminGroupDetail({
         processRequest,
         requestAdminTransfer,
         pendingTransfer,
+        liveCreatorId,
     } = groupActions;
     const router = useRouter();
     const user = useAuthStore((state) => state.user);
@@ -150,7 +151,7 @@ export function DesktopAdminGroupDetail({
     useEffect(() => {
         const prevTransfer = prevTransferRef.current;
         const prevCreator = prevCreatorRef.current;
-        const currentCreator = group?.creatorId ?? null;
+        const currentCreator = liveCreatorId ?? group?.creatorId ?? null;
 
         const wasPending = prevTransfer && prevTransfer.status === 'pending';
         const isNowNull = !pendingTransfer;
@@ -158,24 +159,19 @@ export function DesktopAdminGroupDetail({
         if (wasPending && isNowNull && user?.uid) {
             if (currentCreator && currentCreator !== user.uid && prevCreator === user.uid) {
                 // ACEPTADA: el sucesor aceptó → backend ya eliminó al admin del grupo
-                showToast('Transferencia completada. Has salido del grupo.', 'success', '¡Éxito!');
+                // Nota: El toast de éxito ya lo emite el socket
                 setTransferModalVisible(false);
                 router.replace('/(tabs)/home' as any);
             } else if (currentCreator === user.uid) {
                 // RECHAZADA: sigo siendo admin → reabrir modal para nuevo intento
-                showToast(
-                    'El candidato seleccionado rechazó ser administrador. Selecciona otro miembro para transferir la administración.',
-                    'error',
-                    'Transferencia rechazada'
-                );
-                // Permitimos al admin reintentar abriendo el modal nuevamente
+                // Nota: El toast de rechazo ya lo emite el socket
                 setTransferModalVisible(true);
             }
         }
 
         prevTransferRef.current = pendingTransfer;
         prevCreatorRef.current = currentCreator;
-    }, [pendingTransfer, group?.creatorId, user?.uid, router]);
+    }, [pendingTransfer, liveCreatorId, group?.creatorId, user?.uid, router]);
 
     if (loading) return <Text>Cargando administración...</Text>;
 

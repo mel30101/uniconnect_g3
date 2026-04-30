@@ -6,6 +6,8 @@ interface NotificationContextType {
   notifications: AppNotification[];
   toasts: AppNotification[];
   addNotification: (notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => void;
+  addToastOnly: (notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => void;
+  setPersistedNotifications: (notifications: AppNotification[]) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
@@ -45,6 +47,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setToasts((prev) => [newNotification, ...prev]);
   }, []);
 
+  // Solo toast efímero (no persiste en campana)
+  const addToast = useCallback((notif: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
+    const newToast: AppNotification = {
+      ...notif,
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+    setToasts((prev) => [newToast, ...prev]);
+  }, []);
+
+  // Reemplaza las notificaciones de la campana con las persistidas de Firestore
+  const setPersistedNotifications = useCallback((notifs: AppNotification[]) => {
+    setNotifications(notifs);
+  }, []);
+
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -71,29 +89,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setToasts([]);
   }, []);
 
-  // Registrar handler global para showToast (mapea tipos a 'type' de AppNotification)
+  // Registrar handler global para showToast (solo efímero, no persiste en campana)
   useEffect(() => {
     registerToastHandler(({ type = 'info', title, message }) => {
       const notifType = mapToastTypeToNotification(type);
-      addNotification({
+      addToast({
         type: notifType,
         message: title ? `${title}: ${message}` : message,
         data: {},
       });
     });
-  }, [addNotification]);
+  }, [addToast]);
 
   const value = useMemo(() => ({
     notifications,
     toasts,
     addNotification,
+    addToastOnly: addToast,
+    setPersistedNotifications,
     markAsRead,
     markAllAsRead,
     removeNotification,
     removeToast,
     clearAll,
     unreadCount,
-  }), [notifications, toasts, addNotification, markAsRead, markAllAsRead, removeNotification, removeToast, clearAll, unreadCount]);
+  }), [notifications, toasts, addNotification, addToast, setPersistedNotifications, markAsRead, markAllAsRead, removeNotification, removeToast, clearAll, unreadCount]);
 
   return (
     <NotificationContext.Provider value={value}>
