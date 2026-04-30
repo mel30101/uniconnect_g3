@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useAuthStore } from '../store/useAuthStore';
-import { getProfile, saveProfile as saveProfileUC, getCareerStructure } from '../../di/container';
+import { getProfile, getFullProfile, saveProfile as saveProfileUC, getCareerStructure } from '../../di/container';
 import { Career } from '../../domain/entities/Career';
 import { Section } from '../../domain/entities/Section';
+import { AcademicProfile } from '../../domain/entities/AcademicProfile';
 
 export const useProfile = (externalUserId?: string) => {
   const user = useAuthStore((state) => state.user);
@@ -12,21 +13,25 @@ export const useProfile = (externalUserId?: string) => {
   const [saving, setSaving] = useState(false);
   const [fetchingStructure, setFetchingStructure] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFullView, setIsFullView] = useState(false);
+  const [loadingFull, setLoadingFull] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
   const [careers, setCareers] = useState<Career[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useState<AcademicProfile>({
+    studentId: externalUserId || user?.uid || '',
     facultyId: '',
     academicLevelId: '',
     formationLevelId: '',
     careerId: '',
-    subjects: [] as string[],
+    subjects: [],
     biography: '',
     phone: '',
     age: '',
     studyPreference: '',
     showEmail: true,
   });
+
 
   const targetUid = externalUserId || user?.uid;
   const isExternal = !!externalUserId && externalUserId !== user?.uid;
@@ -41,6 +46,7 @@ export const useProfile = (externalUserId?: string) => {
       if (result.profile) {
         const data = result.profile;
         const initialProfile = {
+          ...data,
           facultyId: data.facultyId || '',
           academicLevelId: data.academicLevelId || '',
           formationLevelId: data.formationLevelId || '',
@@ -51,12 +57,13 @@ export const useProfile = (externalUserId?: string) => {
           age: data.age?.toString() || '',
           studyPreference: data.studyPreference || '',
           showEmail: data.showEmail !== undefined ? data.showEmail : true,
-          ...data,
         };
+
         setProfileData(initialProfile);
-        const profileExists = !!data.careerId;
+        const profileExists = !!data.studentId;
         setHasProfile(profileExists);
         setSections(result.sections);
+
 
         if (!isExternal) {
           if (!profileExists) setIsEditing(true);
@@ -94,7 +101,9 @@ export const useProfile = (externalUserId?: string) => {
     if (!user?.uid) return;
     try {
       setSaving(true);
-      const updatedData = await saveProfileUC.execute(user.uid, profileData);
+      // Extraemos solo lo que se debe guardar (evitamos estadisticas e insignias)
+      const { estadisticas, insignias, ...dataToSave } = profileData as any;
+      const updatedData = await saveProfileUC.execute(user.uid, dataToSave);
       setProfileData((prev) => ({
         ...prev,
         ...updatedData,
@@ -111,6 +120,30 @@ export const useProfile = (externalUserId?: string) => {
     }
   };
 
+  const fetchFullProfile = async () => {
+    if (!targetUid || isFullView) {
+      setIsFullView(true);
+      return;
+    }
+    setLoadingFull(true);
+    try {
+      const result = await getFullProfile.execute(targetUid);
+      if (result.profile) {
+        setProfileData((prev) => ({
+          ...prev,
+          ...result.profile,
+        }));
+        setIsFullView(true);
+      }
+    } catch (e) {
+      console.error('Error cargando perfil completo:', e);
+      Alert.alert('Error', 'No se pudieron cargar las estadísticas del perfil');
+    } finally {
+      setLoadingFull(false);
+    }
+  };
+
+
   return {
     user,
     profileData,
@@ -119,11 +152,16 @@ export const useProfile = (externalUserId?: string) => {
     fetchingStructure,
     isEditing,
     setIsEditing,
+    isFullView,
+    setIsFullView,
+    loadingFull,
     hasProfile,
     careers,
     sections,
     setProfileData,
     updateCareer,
     saveProfile: saveProfileHandler,
+    fetchFullProfile,
   };
+
 };

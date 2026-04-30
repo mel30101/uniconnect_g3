@@ -1,4 +1,3 @@
-import { Alert } from 'react-native';
 import {
   addMember,
   createGroup as createGroupUC,
@@ -7,9 +6,11 @@ import {
   processRequest as processRequestUC,
   removeMember as removeMemberUC,
   transferAdmin as transferAdminUC,
+  requestAdminTransfer as requestAdminTransferUC,
 } from '../../di/container';
 import { useAuthStore } from '../store/useAuthStore';
 import { handleApiError } from '../utils/errorHandler';
+import { showToast } from '../utils/showToast';
 
 export const useGroupActions = () => {
   const user = useAuthStore((state) => state.user);
@@ -17,7 +18,9 @@ export const useGroupActions = () => {
   const createGroup = async (name: string, subjectId: string, description: string) => {
     if (!user?.uid) return null;
     try {
-      return await createGroupUC.execute(name, subjectId, description, user.uid);
+      const result = await createGroupUC.execute(name, subjectId, description, user.uid);
+      showToast('Grupo creado correctamente.', 'success');
+      return result;
     } catch (e: any) {
       handleApiError(e, 'No se pudo crear el grupo.');
       return null;
@@ -28,7 +31,7 @@ export const useGroupActions = () => {
     if (!user?.uid) return false;
     try {
       await joinGroupUC.execute(groupId, user.uid, user.name);
-      Alert.alert('¡Éxito!', 'Solicitud enviada correctamente. Espera a que un administrador la apruebe.');
+      showToast('Solicitud enviada correctamente. Espera a que un administrador la apruebe.', 'success', '¡Éxito!');
       return true;
     } catch (e: any) {
       handleApiError(e, 'No se pudo enviar la solicitud.');
@@ -40,7 +43,10 @@ export const useGroupActions = () => {
     try {
       const success = await processRequestUC.execute(groupId, requestId, status);
       if (success) {
-        Alert.alert('Éxito', `Solicitud ${status === 'accepted' ? 'aceptada' : 'rechazada'}`);
+        showToast(
+          status === 'accepted' ? 'Solicitud aceptada correctamente.' : 'Solicitud rechazada.',
+          'success'
+        );
         return true;
       }
     } catch (e: any) {
@@ -53,7 +59,7 @@ export const useGroupActions = () => {
     if (!user?.uid) return false;
     try {
       await transferAdminUC.execute(groupId, user.uid, newAdminId);
-      Alert.alert('¡Éxito!', 'Has cedido la administración de este grupo.');
+      showToast('Has cedido la administración de este grupo.', 'success', '¡Éxito!');
       return true;
     } catch (e: any) {
       handleApiError(e, 'No se pudo transferir la administración.');
@@ -65,7 +71,7 @@ export const useGroupActions = () => {
     if (!user?.uid) return false;
     try {
       await removeMemberUC.execute(groupId, memberId, user.uid);
-      Alert.alert('Éxito', 'Miembro eliminado.');
+      showToast('Miembro eliminado.', 'success');
       return true;
     } catch (e: any) {
       handleApiError(e, 'No se pudo eliminar al miembro.');
@@ -104,11 +110,24 @@ export const useGroupActions = () => {
     }
   };
 
+  const requestAdminTransfer = async (groupId: string, candidateId: string) => {
+    if (!user?.uid) return false;
+    try {
+      await requestAdminTransferUC.execute(groupId, user.uid, candidateId);
+      showToast('Solicitud de transferencia enviada al candidato.', 'info');
+      return true;
+    } catch (e: any) {
+      handleApiError(e, 'No se pudo enviar la solicitud de transferencia.');
+      return false;
+    }
+  };
+
   return {
     createGroup,
     joinGroup,
     processRequest,
     transferAdmin,
+    requestAdminTransfer,
     removeMember,
     addMemberToGroup,
     leaveGroup,

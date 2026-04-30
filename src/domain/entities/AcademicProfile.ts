@@ -1,3 +1,9 @@
+export interface Estadisticas {
+  gruposCreados: number;
+  gruposParticipa: number;
+  mensajesEnviados: number;
+}
+
 export interface AcademicProfile {
   studentId: string;
   userName?: string;
@@ -17,4 +23,6 @@ export interface AcademicProfile {
   age?: number | string;
   studyPreference?: string;
   showEmail?: boolean;
+  estadisticas?: Estadisticas;
+  insignias?: string[];
 }

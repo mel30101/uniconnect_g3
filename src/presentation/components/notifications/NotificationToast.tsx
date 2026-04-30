@@ -24,28 +24,28 @@ interface ToastProps {
 
 const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
   const router = useRouter();
-  const { removeNotification } = useNotificationContext();
+  const { removeToast } = useNotificationContext();
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      removeNotification(notification.id);
+      removeToast(notification.id);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [notification.id, removeNotification]);
+  }, [notification.id, removeToast]);
 
   const handleAction = () => {
     if (notification.type === 'join_request' && notification.data.groupId) {
       router.push(`/group/${notification.data.groupId}/admin` as any);
     }
-    removeNotification(notification.id);
+    removeToast(notification.id);
   };
 
   const handleAdminTransfer = async (action: 'accept' | 'reject') => {
     if (!user?.uid || !notification.data.groupId) return;
     try {
       await respondToAdminTransfer.execute(notification.data.groupId, user.uid, action);
-      removeNotification(notification.id);
+      removeToast(notification.id);
     } catch (error) {
       console.error("Error responding to admin transfer:", error);
     }
@@ -81,14 +81,19 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
 
   const typeConfig = config[notification.type as keyof typeof config] || config.join_request;
 
-  const MotionView = Platform.OS === 'web' ? motion.div : View;
+  const isWeb = Platform.OS === 'web';
+  const MotionView = isWeb ? motion.div : View;
+  // motion.div (framer-motion) no acepta arrays como style: hay que aplanar.
+  const composedStyle = isWeb
+    ? StyleSheet.flatten([styles.toastContainer, { borderLeftColor: typeConfig.borderColor }])
+    : [styles.toastContainer, { borderLeftColor: typeConfig.borderColor }];
 
   return (
     <MotionView
       initial={{ opacity: 0, x: 50, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 20, scale: 0.95 }}
-      style={[styles.toastContainer, { borderLeftColor: typeConfig.borderColor }]}
+      style={composedStyle}
     >
       <View style={styles.content}>
         <View style={styles.iconContainer}>{typeConfig.icon}</View>
@@ -117,7 +122,7 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
           </View>
         </View>
 
-        <TouchableOpacity onPress={() => removeNotification(notification.id)} style={{ padding: 4 }}>
+        <TouchableOpacity onPress={() => removeToast(notification.id)} style={{ padding: 4 }}>
           <X color="#999" size={20} />
         </TouchableOpacity>
       </View>
@@ -126,14 +131,14 @@ const NotificationToast: React.FC<ToastProps> = ({ notification }) => {
 };
 
 export const NotificationStack: React.FC = () => {
-  const { notifications } = useNotificationContext();
+  const { toasts } = useNotificationContext();
 
-  if (Platform.OS !== 'web' && notifications.length === 0) return null;
+  if (Platform.OS !== 'web' && toasts.length === 0) return null;
 
   return (
     <View style={styles.stackContainer}>
       <AnimatePresence mode="popLayout">
-        {notifications.map((notification: any) => (
+        {toasts.map((notification: any) => (
           <NotificationToast key={notification.id} notification={notification} />
         ))}
       </AnimatePresence>

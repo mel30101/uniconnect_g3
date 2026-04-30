@@ -17,6 +17,9 @@ import { UCaldasTheme } from '@/app/constants/Colors';
 import { useGroups } from '../../hooks/useGroups';
 import { Collapsible } from '../common/Collapsible';
 import { styles } from './CreateGroupModalStyles';
+import { collection, getCountFromServer, query, where } from 'firebase/firestore';
+import { db } from '../../../data/sources/FirebaseClient';
+import { showToast } from '../../utils/showToast';
 
 interface CreateGroupModalProps {
     visible: boolean;
@@ -44,12 +47,40 @@ export const CreateGroupModal = ({ visible, onClose, onSuccess }: CreateGroupMod
             return;
         }
 
+        // Pre-validación del límite de 3 grupos por asignatura (defense-in-depth con backend)
+        try {
+            const q = query(
+                collection(db, 'groups'),
+                where('subjectId', '==', selectedSubject.id)
+            );
+            const snap = await getCountFromServer(q);
+            if (snap.data().count >= 3) {
+                // Cerramos el formulario antes de mostrar el toast (UX issue: el modal lo tapaba)
+                setName('');
+                setDescription('');
+                setSelectedSubject(null);
+                onClose();
+                showToast(
+                    'No es posible crear el grupo. Se ha alcanzado el límite máximo de 3 grupos de estudio para esta asignatura.',
+                    'error',
+                    'Límite alcanzado'
+                );
+                return;
+            }
+        } catch (err) {
+            // Si la consulta de prevalidación falla, dejamos que el backend la valide
+            console.warn('Prevalidación de límite falló, delegando a backend:', err);
+        }
+
         const result = await createGroup(name, selectedSubject.id, description);
+        // Cerramos el modal en cualquier caso (éxito o error de servidor) para que el toast sea visible
+        setName('');
+        setDescription('');
+        setSelectedSubject(null);
         if (result) {
-            setName('');
-            setDescription('');
-            setSelectedSubject(null);
             onSuccess();
+        } else {
+            onClose();
         }
     };
 

@@ -14,4 +14,5 @@ export interface IGroupRepository {
   getAvailableStudents(groupId: string, subjectId: string, search?: string): Promise<any[]>;
   deleteUserRequests(groupId: string, userId: string): Promise<boolean>;
   respondToAdminTransfer(groupId: string, candidateId: string, action: 'accept' | 'reject'): Promise<boolean>;
+  requestAdminTransfer(groupId: string, adminId: string, candidateId: string): Promise<boolean>;
 }

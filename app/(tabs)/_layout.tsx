@@ -6,10 +6,12 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { ApiProfileRepository } from '@/src/data/repositories/ApiProfileRepository';
 import { WebHeader } from '@/src/presentation/components/layout/WebHeader';
+import { useNotificationContext } from '@/src/presentation/context/NotificationContext';
 
 export default function TabLayout() {
   const { user, setUser } = useAuthStore();
   const pathname = usePathname();
+  const { unreadCount } = useNotificationContext();
 
   useEffect(() => {
     const syncProfile = async () => {
@@ -105,6 +107,37 @@ export default function TabLayout() {
           options={{
             title: 'Chats',
             tabBarIcon: ({ color }) => <Ionicons name="chatbubbles" size={24} color={color} />,
+          }}
+        />
+
+        {/* Pestaña de Notificaciones (solo visible en móvil) */}
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            title: 'Alertas',
+            tabBarIcon: ({ color }) => (
+              <View style={{ position: 'relative' }}>
+                <Ionicons name="notifications" size={24} color={color} />
+                {unreadCount > 0 && (
+                  <View style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -6,
+                    backgroundColor: '#dc3545',
+                    borderRadius: 9,
+                    minWidth: 16,
+                    height: 16,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 3,
+                  }}>
+                    <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ),
           }}
         />
 

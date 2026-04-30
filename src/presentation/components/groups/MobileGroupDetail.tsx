@@ -11,7 +11,7 @@ import { PendingRequests } from './PendingRequests';
 
 export function MobileGroupDetail({ groupActions, id, sendingRequest, showAddModal, setShowAddModal, availableStudents, performSearch, handleJoinRequest, handleLeaveGroup }: any) {
     const router = useRouter();
-    const { group, requests, loading, isAdmin, isMember, user } = groupActions;
+    const { group, requests, loading, isAdmin, isMember, user, userRequest } = groupActions;
 
     if (loading && !group) return (
         <View style={styles.loadingContainer}>
@@ -86,18 +86,34 @@ export function MobileGroupDetail({ groupActions, id, sendingRequest, showAddMod
                 )}
             </ScrollView>
 
-            {!isMember && (
-                <View style={styles.footerContainer}>
-                    <TouchableOpacity style={[styles.requestButton, sendingRequest && styles.requestButtonDisabled]} onPress={handleJoinRequest} disabled={sendingRequest}>
-                        {sendingRequest ? <ActivityIndicator color="#fff" /> : (
-                            <>
-                                <Ionicons name="person-add-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.requestButtonText}>Solicitar unirme al grupo</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
-            )}
+            {!isMember && (() => {
+                const isPending = userRequest?.status === 'pending';
+                const wasRejected = userRequest?.status === 'rejected';
+                const buttonLabel = isPending
+                    ? 'Solicitud enviada'
+                    : wasRejected
+                        ? 'Volver a hacer solicitud para unirme'
+                        : 'Solicitar unirme al grupo';
+                const iconName = isPending ? 'time-outline' : 'person-add-outline';
+                const buttonDisabled = sendingRequest || isPending;
+
+                return (
+                    <View style={styles.footerContainer}>
+                        <TouchableOpacity
+                            style={[styles.requestButton, buttonDisabled && styles.requestButtonDisabled]}
+                            onPress={handleJoinRequest}
+                            disabled={buttonDisabled}
+                        >
+                            {sendingRequest ? <ActivityIndicator color="#fff" /> : (
+                                <>
+                                    <Ionicons name={iconName as any} size={20} color="#fff" style={{ marginRight: 8 }} />
+                                    <Text style={styles.requestButtonText}>{buttonLabel}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                );
+            })()}
 
             <AddMemberModal 
                 visible={showAddModal} 

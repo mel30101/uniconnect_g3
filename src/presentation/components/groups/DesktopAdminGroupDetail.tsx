@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './DesktopAdminGroupDetailStyles';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { getOrCreateChat } from '@/src/di/container';
 import { AddMemberModal } from './AddMemberModal';
+import { TransferAdminModal } from './TransferAdminModal';
+import { showToast } from '@/src/presentation/utils/showToast';
 
 // --- Tarjetas de Estadísticas ---
 function StatCard({ title, value, subValue, subColor, icon, iconColor, bgColor }: any) {
@@ -23,33 +25,92 @@ function StatCard({ title, value, subValue, subColor, icon, iconColor, bgColor }
     );
 }
 
-// --- Tarjeta de Solicitudes Recientes ---
-function RecentRequestsCard() {
+// --- Tarjeta de Solicitudes Recientes (DINÁMICA) ---
+function RecentRequestsCard({ requests, onAccept, onReject, processingId }: {
+    requests: any[];
+    onAccept: (id: string) => void;
+    onReject: (id: string) => void;
+    processingId?: string | null;
+}) {
+    const count = requests?.length || 0;
+    const badgeBg = count > 0 ? '#ffebeb' : '#f0f4ff';
+    const badgeColor = count > 0 ? '#d93025' : '#708ab5';
+
     return (
         <View style={styles.rightCard}>
             <View style={styles.rightCardHeader}>
                 <Text style={styles.rightCardTitle}>Solicitudes Recientes</Text>
-                <View style={[styles.badge, { backgroundColor: '#f0f4ff' }]}><Text style={[styles.badgeText, { color: '#708ab5' }]}>0</Text></View>
+                <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+                    <Text style={[styles.badgeText, { color: badgeColor }]}>{count}</Text>
+                </View>
             </View>
 
-            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                <Ionicons name="document-text-outline" size={32} color="#e5eeff" style={{ marginBottom: 10 }} />
-                <Text style={{ color: '#708ab5', fontSize: 13, textAlign: 'center' }}>No hay solicitudes pendientes por el momento.</Text>
-            </View>
+            {count === 0 ? (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                    <Ionicons name="document-text-outline" size={32} color="#e5eeff" style={{ marginBottom: 10 }} />
+                    <Text style={{ color: '#708ab5', fontSize: 13, textAlign: 'center' }}>
+                        No hay solicitudes pendientes por el momento.
+                    </Text>
+                </View>
+            ) : (
+                <ScrollView style={{ maxHeight: 280 }} nestedScrollEnabled>
+                    {requests.map((r: any) => {
+                        const reqId = r.id || r.userId;
+                        const initials = (r.userName || r.name || 'U').substring(0, 2).toUpperCase();
+                        const isProcessing = processingId === reqId;
+                        return (
+                            <View key={reqId} style={styles.requestItem}>
+                                <View style={styles.requestUser}>
+                                    <View style={styles.avatarCP}>
+                                        <Text style={styles.avatarText}>{initials}</Text>
+                                    </View>
+                                    <Text style={styles.requestName}>{r.userName || r.name || 'Usuario'}</Text>
+                                </View>
+                                <View style={styles.requestActions}>
+                                    <TouchableOpacity
+                                        style={[styles.btnAccept, isProcessing && { opacity: 0.6 }]}
+                                        onPress={() => !isProcessing && onAccept(reqId)}
+                                        disabled={isProcessing}
+                                    >
+                                        <Text style={styles.btnAcceptText}>Aceptar</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.btnReject, isProcessing && { opacity: 0.6 }]}
+                                        onPress={() => !isProcessing && onReject(reqId)}
+                                        disabled={isProcessing}
+                                    >
+                                        <Text style={styles.btnRejectText}>Rechazar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        );
+                    })}
+                </ScrollView>
+            )}
         </View>
     );
 }
 
 // --- Tarjeta de Abandonar Grupo ---
-function AbandonGroupCard() {
+function AbandonGroupCard({ onPress, pending }: { onPress: () => void; pending?: boolean }) {
     return (
         <View style={styles.abandonCard}>
             <View style={{ marginBottom: 15 }}>
                 <Text style={styles.abandonTitle}>Abandonar Grupo</Text>
-                <Text style={styles.abandonSub}>Salir de esta comunidad. Debes tranferir la administración.</Text>
+                <Text style={styles.abandonSub}>
+                    {pending
+                        ? 'Esperando respuesta del candidato seleccionado. Tu salida se confirmará cuando acepte la administración.'
+                        : 'Salir de esta comunidad. Debes transferir la administración.'}
+                </Text>
             </View>
-            <TouchableOpacity style={styles.abandonBtn}>
-                <Text style={styles.abandonBtnText}>Abandonar Grupo</Text>
+            <TouchableOpacity
+                style={[styles.abandonBtn, pending && { backgroundColor: '#c0ccda' }]}
+                onPress={pending ? undefined : onPress}
+                disabled={pending}
+            >
+                <Text style={styles.abandonBtnText}>
+                    {pending ? 'Solicitud enviada' : 'Abandonar Grupo'}
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -66,12 +127,86 @@ export function DesktopAdminGroupDetail({
     availableStudents?: any[],
     performSearch?: (search: string, selectedMaterias: string[]) => Promise<void> | void
 }) {
-    const { group, loading, addMemberToGroup, removeMember } = groupActions;
+    const {
+        group,
+        loading,
+        requests,
+        addMemberToGroup,
+        removeMember,
+        processRequest,
+        requestAdminTransfer,
+        pendingTransfer,
+    } = groupActions;
     const router = useRouter();
     const user = useAuthStore((state) => state.user);
     const [isAddModalVisible, setAddModalVisible] = useState(false);
+    const [isTransferModalVisible, setTransferModalVisible] = useState(false);
+    const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+
+    // Refs para detectar transición pending → null (aceptación vs rechazo)
+    const prevTransferRef = useRef<any>(null);
+    const prevCreatorRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        const prevTransfer = prevTransferRef.current;
+        const prevCreator = prevCreatorRef.current;
+        const currentCreator = group?.creatorId ?? null;
+
+        const wasPending = prevTransfer && prevTransfer.status === 'pending';
+        const isNowNull = !pendingTransfer;
+
+        if (wasPending && isNowNull && user?.uid) {
+            if (currentCreator && currentCreator !== user.uid && prevCreator === user.uid) {
+                // ACEPTADA: el sucesor aceptó → backend ya eliminó al admin del grupo
+                showToast('Transferencia completada. Has salido del grupo.', 'success', '¡Éxito!');
+                setTransferModalVisible(false);
+                router.replace('/(tabs)/home' as any);
+            } else if (currentCreator === user.uid) {
+                // RECHAZADA: sigo siendo admin → reabrir modal para nuevo intento
+                showToast(
+                    'El candidato seleccionado rechazó ser administrador. Selecciona otro miembro para transferir la administración.',
+                    'error',
+                    'Transferencia rechazada'
+                );
+                // Permitimos al admin reintentar abriendo el modal nuevamente
+                setTransferModalVisible(true);
+            }
+        }
+
+        prevTransferRef.current = pendingTransfer;
+        prevCreatorRef.current = currentCreator;
+    }, [pendingTransfer, group?.creatorId, user?.uid, router]);
 
     if (loading) return <Text>Cargando administración...</Text>;
+
+    const handleAcceptRequest = async (requestId: string) => {
+        setProcessingRequestId(requestId);
+        await processRequest(requestId, 'accepted');
+        setProcessingRequestId(null);
+    };
+
+    const handleRejectRequest = async (requestId: string) => {
+        setProcessingRequestId(requestId);
+        await processRequest(requestId, 'rejected');
+        setProcessingRequestId(null);
+    };
+
+    const handleConfirmTransfer = async (candidateId: string) => {
+        return await requestAdminTransfer(candidateId);
+    };
+
+    const handleAbandonClick = () => {
+        const eligible = (group?.members || []).filter((m: any) => m.id !== user?.uid);
+        if (eligible.length === 0) {
+            showToast(
+                'No hay otros miembros en el grupo a quien transferir la administración. Agrega miembros primero.',
+                'warning',
+                'Acción no permitida'
+            );
+            return;
+        }
+        setTransferModalVisible(true);
+    };
 
     const openGroupChat = () => {
         router.push(`/group/chat/${id}`);
@@ -133,7 +268,9 @@ export function DesktopAdminGroupDetail({
                     <TouchableOpacity style={styles.menuItem}>
                         <Ionicons name="document-text-outline" size={20} color="#708ab5" />
                         <Text style={styles.menuText}>Solicitudes</Text>
-                        <View style={[styles.menuBadge, { backgroundColor: '#f0f4ff' }]}><Text style={[styles.menuBadgeText, { color: '#708ab5' }]}>0</Text></View>
+                        <View style={[styles.menuBadge, { backgroundColor: (requests?.length || 0) > 0 ? '#d93025' : '#f0f4ff' }]}>
+                            <Text style={[styles.menuBadgeText, { color: (requests?.length || 0) > 0 ? '#fff' : '#708ab5' }]}>{(requests?.length || 0)}</Text>
+                        </View>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.menuItem} onPress={openGroupChat}>
                         <Ionicons name="chatbubbles-outline" size={20} color="#708ab5" />
@@ -177,9 +314,12 @@ export function DesktopAdminGroupDetail({
                             />
                             <StatCard
                                 title="Solicitudes Pendientes"
-                                value="0"
-                                subValue="Todo al día" subColor="#1e8e3e"
-                                icon="checkmark-circle-outline" iconColor="#1e8e3e" bgColor="#e6f4ea"
+                                value={(requests?.length || 0).toString()}
+                                subValue={(requests?.length || 0) === 0 ? 'Todo al día' : 'Requieren atención'}
+                                subColor={(requests?.length || 0) === 0 ? '#1e8e3e' : '#d93025'}
+                                icon={(requests?.length || 0) === 0 ? 'checkmark-circle-outline' : 'alert-circle-outline'}
+                                iconColor={(requests?.length || 0) === 0 ? '#1e8e3e' : '#d93025'}
+                                bgColor={(requests?.length || 0) === 0 ? '#e6f4ea' : '#ffebeb'}
                             />
                         </View>
 
@@ -258,8 +398,16 @@ export function DesktopAdminGroupDetail({
 
                     {/* Right Column (Control Panel) */}
                     <View style={styles.rightColumn}>
-                        <RecentRequestsCard />
-                        <AbandonGroupCard />
+                        <RecentRequestsCard
+                            requests={requests || []}
+                            onAccept={handleAcceptRequest}
+                            onReject={handleRejectRequest}
+                            processingId={processingRequestId}
+                        />
+                        <AbandonGroupCard
+                            onPress={handleAbandonClick}
+                            pending={!!pendingTransfer && pendingTransfer.requesterId === user?.uid}
+                        />
                     </View>
                 </View>
             </ScrollView>
@@ -273,6 +421,15 @@ export function DesktopAdminGroupDetail({
                 availableStudents={availableStudents}
                 performSearch={performSearch}
                 addMemberToGroup={addMemberToGroup}
+            />
+
+            <TransferAdminModal
+                visible={isTransferModalVisible}
+                onClose={() => setTransferModalVisible(false)}
+                members={group?.members || []}
+                adminId={user?.uid || ''}
+                pendingTransfer={pendingTransfer}
+                onConfirmTransfer={handleConfirmTransfer}
             />
         </View>
     );

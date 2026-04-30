@@ -18,8 +18,9 @@ export const PendingRequests = ({ requests, processRequest }: { requests: any[],
                 <View key={req.id} style={styles.memberItem}>
                     <View style={styles.memberInfo}>
                         <TouchableOpacity
-                            onPress={() => router.push({ pathname: "/group/member-profile/[userId]", params: { userId: req.userId, userName: req.userName }})}
+                            onPress={() => router.push({ pathname: "/user/[id]", params: { id: req.userId } })}
                         >
+
                             <Text style={{ fontWeight: 'bold', color: UCaldasTheme.azulOscuro, textDecorationLine: 'underline' }}>
                                 {req.userName}
                             </Text>

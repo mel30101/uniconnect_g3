@@ -1,37 +1,29 @@
 import { getOrCreateChat } from "@/src/di/container";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { UCaldasTheme } from "../constants/Colors";
 import { useAuthStore } from "@/src/presentation/store/useAuthStore";
-import { ApiProfileRepository } from "@/src/data/repositories/ApiProfileRepository";
+import { useProfile } from "@/src/presentation/hooks/useProfile";
+import { ProfileEnrichedView } from "@/src/presentation/components/profile/ProfileEnrichedView";
 
 export default function ExternalProfileScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
     const authUser = useAuthStore((state) => state.user);
 
-    useEffect(() => {
-        const fetchUserProfile = async () => {
-            try {
-                const profileRepo = new ApiProfileRepository();
-                const data = await profileRepo.getProfile(id as string);
-                setUser(data);
-            } catch (error) {
-                console.error("Error al obtener perfil:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUserProfile();
-    }, [id]);
+    const {
+        profileData: user,
+        loading,
+        hasProfile,
+        isFullView,
+        loadingFull,
+        fetchFullProfile,
+    } = useProfile(typeof id === 'string' ? id : id?.[0]);
 
     if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} color={UCaldasTheme.azulOscuro} />;
-    if (!user) return <View style={styles.container}><Text>No se encontró el perfil.</Text></View>;
+    if (!hasProfile) return <View style={styles.container}><Text>No se encontró el perfil.</Text></View>;
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -132,6 +124,31 @@ export default function ExternalProfileScreen() {
                 )}
             </View>
 
+            {/* VISTA ENRIQUECIDA (ESTADISTICAS E INSIGNIAS) */}
+            <View style={{ paddingHorizontal: 20 }}>
+                {!isFullView ? (
+                    <TouchableOpacity
+                        style={styles.fullViewButton}
+                        onPress={fetchFullProfile}
+                        disabled={loadingFull}
+                    >
+                        {loadingFull ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <>
+                                <Ionicons name="stats-chart-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
+                                <Text style={styles.fullViewButtonText}>Ver vista completa</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                ) : (
+                    <ProfileEnrichedView
+                        estadisticas={user.estadisticas}
+                        insignias={user.insignias}
+                    />
+                )}
+            </View>
+
             <TouchableOpacity
                 style={styles.chatButton}
                 onPress={async () => {
@@ -140,7 +157,7 @@ export default function ExternalProfileScreen() {
                         authUser.uid,
                         id as string,
                         authUser.name ?? "usuario",
-                        user.userName
+                        user.userName || "Estudiante"
                     );
                     router.push({
                         pathname: "/chat/[chatId]",
@@ -175,6 +192,12 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 15, color: "#374151" },
     subjectItem: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
     subjectText: { marginLeft: 10, fontSize: 15, color: "#4b5563" },
+    fullViewButton: {
+        backgroundColor: UCaldasTheme.dorado, flexDirection: "row",
+        padding: 16, borderRadius: 12, justifyContent: "center", alignItems: "center",
+        marginBottom: 10, elevation: 3
+    },
+    fullViewButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
     chatButton: {
         backgroundColor: UCaldasTheme.azulOscuro, flexDirection: "row", marginHorizontal: 20,
         padding: 16, borderRadius: 12, justifyContent: "center", alignItems: "center",

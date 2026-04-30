@@ -7,7 +7,7 @@ let sharedSocket: Socket | null = null;
 
 export const useSocket = () => {
   const user = useAuthStore((state) => state.user);
-  
+
   useEffect(() => {
     if (!user?.uid) {
       if (sharedSocket) {
@@ -19,7 +19,7 @@ export const useSocket = () => {
 
     if (!sharedSocket) {
       const socketUrl = process.env.EXPO_PUBLIC_SOCIAL_SERVICE_URL || 'http://localhost:3003';
-      
+
       sharedSocket = io(socketUrl, {
         query: { userId: user.uid },
         transports: ['websocket'],
