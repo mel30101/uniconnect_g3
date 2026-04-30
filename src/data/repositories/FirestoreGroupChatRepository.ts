@@ -1,8 +1,8 @@
-import { IGroupChatRepository } from '../../domain/repositories/IGroupChatRepository';
-import { Message } from '../../domain/entities/Message';
-import { db } from '../sources/FirebaseClient';
-import apiClient from '../sources/ApiClient';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { Message } from '../../domain/entities/Message';
+import { IGroupChatRepository } from '../../domain/repositories/IGroupChatRepository';
+import apiClient from '../sources/ApiClient';
+import { db } from '../sources/FirebaseClient';
 
 export class FirestoreGroupChatRepository implements IGroupChatRepository {
   async sendGroupMessage(groupId: string, text: string, senderId: string): Promise<void> {
@@ -12,11 +12,7 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
     });
   }
 
-<<<<<<< HEAD
-  async sendGroupFileMessage(groupId: string, senderId: string, file: any): Promise<void> {
-=======
   async sendGroupFileMessage(groupId: string, senderId: string, file: any, text?: string): Promise<void> {
->>>>>>> d1d29d3d7b5dd59ba43a81fd3d7cc7b8ac51711b
     const formData = new FormData();
     formData.append('senderId', senderId);
     if (text) {
@@ -80,13 +76,10 @@ export class FirestoreGroupChatRepository implements IGroupChatRepository {
           // Normalización: el backend guarda 'content', el UI espera 'text'
           text: data.text || data.content,
           senderId: data.senderId || data.sender?.id,
-<<<<<<< HEAD
-=======
           // Normalizar campos de archivo al nivel raíz para MensajeFactory/ChatBubble
           fileUrl,
           fileName,
           size: fileSize,
->>>>>>> d1d29d3d7b5dd59ba43a81fd3d7cc7b8ac51711b
         } as Message;
       });
       callback(messages);
