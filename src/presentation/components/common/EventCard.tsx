@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Platform } from 'react-native';
-import { Event } from '@/src/domain/entities/Event'; 
+import { Event } from '@/src/domain/entities/Event';
 
 interface EventCardProps {
   event: Event;
@@ -23,12 +23,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
   return (
     <View style={styles.cardContainer}>
-      <Image 
-        source={{ uri: event.imageUrl || 'https://via.placeholder.com/400x150?text=UniConnect+Evento' }} 
-        style={styles.eventImage} 
-        resizeMode="cover"
-      />
-      
+      {event.imageUrl && (
+        <Image
+          source={{ uri: event.imageUrl }}
+          style={styles.eventImage}
+          resizeMode="cover"
+        />
+      )}
+
       <View style={styles.contentContainer}>
         <View style={styles.headerRow}>
           <View style={[styles.typeBadge, { backgroundColor: badgeColor }]}>
@@ -41,7 +43,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
           <Text style={styles.detailText}>📅 {formatDate(event.date)}</Text>
           <Text style={styles.detailText}>🕒 {event.time} ({event.duration})</Text>
         </View>
-        
+
         <View style={styles.locationContainer}>
           <Text style={styles.locationText}>📍 {event.location}</Text>
         </View>

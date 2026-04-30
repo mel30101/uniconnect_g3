@@ -37,6 +37,7 @@ import { SearchGroups } from '../application/use-cases/search/SearchGroups';
 
 // === Use Cases: Event ===
 import { GetEvents } from '../application/use-cases/event/GetEvents';
+import { GetEventCategories } from '../application/use-cases/event/GetEventCategories';
 
 // === Use Cases: Academic ===
 import { GetCareers } from '../application/use-cases/academic/GetCareers';
@@ -83,6 +84,7 @@ export const searchGroups = new SearchGroups(searchRepo);
 
 // Event
 export const getEvents = new GetEvents(eventRepo);
+export const getEventCategories = new GetEventCategories(eventRepo);
 
 // Academic
 export const getCareers = new GetCareers(academicRepo);

@@ -1,5 +1,7 @@
 import { Event } from '../entities/Event';
+import { EventCategory } from '../entities/EventCategory';
 
 export interface IEventRepository {
-  getEvents(): Promise<Event[]>;
+  getEvents(categoryId?: string): Promise<Event[]>;
+  getCategories(): Promise<EventCategory[]>;
 }
