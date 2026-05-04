@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -18,11 +18,12 @@ export const useSocket = () => {
     }
 
     if (!sharedSocket) {
-      const socketUrl = process.env.EXPO_PUBLIC_SOCIAL_SERVICE_URL || 'http://localhost:3003';
+      const socketUrl = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3003';
 
       sharedSocket = io(socketUrl, {
         query: { userId: user.uid },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
+        reconnection: true,
       });
 
       sharedSocket.on('connect', () => {

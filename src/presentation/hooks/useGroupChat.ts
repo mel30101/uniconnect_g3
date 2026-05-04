@@ -54,6 +54,7 @@ export const useGroupChat = (groupId: string) => {
     };
 
     const handleMessageUpdated = (data: { messageId: string, reacciones: any }) => {
+      //console.log('[DEBUG] Se llamó a handleAddReaction, mensaje:', messages); // <--- ESTO ES LO NUEVO
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === data.messageId ? { ...msg, reacciones: data.reacciones } : msg
