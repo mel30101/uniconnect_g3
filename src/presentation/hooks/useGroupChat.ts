@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { groupChatRepo } from '../../di/container';
-import { useAuthStore } from '../store/useAuthStore';
+import { Platform } from 'react-native';
+import { groupChatRepo, sendGroupFileMessage as sendGroupFileMessageUC, sendGroupMessage as sendGroupMessageUC } from '../../di/container';
 import { Message } from '../../domain/entities/Message';
 import { useSocket } from '../hooks/useSocket';
-import { Platform } from 'react-native';
-import { sendGroupMessage as sendGroupMessageUC, sendGroupFileMessage as sendGroupFileMessageUC } from '../../di/container';
+import { useAuthStore } from '../store/useAuthStore';
+
+import { useGroupDetail } from './useGroupDetail';
 
 export const useGroupChat = (groupId: string) => {
   const user = useAuthStore((state) => state.user);
+  const { socket } = useSocket();
+  const { group } = useGroupDetail(groupId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
-  const { socket } = useSocket();
 
   // Efecto 1: Suscripción a Firestore — SIEMPRE se ejecuta, independiente del socket
   useEffect(() => {
@@ -52,6 +54,7 @@ export const useGroupChat = (groupId: string) => {
     };
 
     const handleMessageUpdated = (data: { messageId: string, reacciones: any }) => {
+      //console.log('[DEBUG] Se llamó a handleAddReaction, mensaje:', messages); // <--- ESTO ES LO NUEVO
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === data.messageId ? { ...msg, reacciones: data.reacciones } : msg

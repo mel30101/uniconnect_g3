@@ -1,9 +1,8 @@
-import { useGroupChat } from '../../hooks/useGroupChat';
-import { useState } from 'react';
-import { Button, TextInput, View, Pressable, Text, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
-import { Platform } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useGroupChat } from '../../hooks/useGroupChat';
 
 export default function GroupMessageInput({ groupId }: { groupId: string }) {
   const [text, setText] = useState('');
@@ -17,8 +16,6 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
       setText('');
     }
   };
-
-  // En GroupMessageInput.tsx - Modifica la función handlePickFile
 
   const handlePickFile = async () => {
     if (!user || isSending) return;
@@ -39,26 +36,28 @@ export default function GroupMessageInput({ groupId }: { groupId: string }) {
         }
 
         // 2. Construir objeto universal
-        // Si es WEB, el "archivo" es asset.file (el File real del navegador)
-        // Si es MOBILE, es el objeto con URI para el repositorio
-        const fileToUpload = Platform.OS === 'web'
-          ? asset.file  // <--- IMPORTANTE: Pasamos el File puro en Web
-          : {
-            uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
-            type: detectedType || 'application/octet-stream',
-            name: asset.name,
-            size: asset.size,
-          };
+        const fileToUpload = {
+          uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+          type: detectedType || 'application/octet-stream',
+          name: asset.name,
+          size: asset.size,
+          file: asset.file,
+        };
 
         console.log("[Chat] Archivo seleccionado:", asset.name);
+
         await sendFileMessage(fileToUpload, text);
         setText('');
       }
     } catch (err: any) {
-      // ... tu lógica de error
+      console.log("Error al seleccionar archivo:", err);
+      if (Platform.OS === 'web') {
+        window.alert("No se pudo enviar el archivo. Revisa tu conexión.");
+      } else {
+        Alert.alert("Error", "No se pudo enviar el archivo.");
+      }
     }
   };
-
 
   return (
     <View style={{ backgroundColor: '#f4f6f8' }}>

@@ -1,8 +1,8 @@
 import UCaldasTheme from '@/app/constants/Colors';
-import { Modal, Pressable, Text, TouchableWithoutFeedback, View } from 'react-native';
-import { useState } from 'react';
-import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import { MensajeFactory } from '@/src/domain/models/chat/MensajeFactory';
+import { useAuthStore } from '@/src/presentation/store/useAuthStore';
+import { useState } from 'react';
+import { Modal, Platform, Pressable, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '🔥', '😮', '😢'];
 
@@ -26,7 +26,16 @@ export default function ChatBubble({ message, isOwn, senderName, isMentioned, on
       maxWidth: '75%',
     }}>
       <Pressable
-        onLongPress={() => setShowReactions(true)}
+        onLongPress={() => {
+          console.log('[UI] onLongPress activado');
+          setShowReactions(true);
+        }}
+        onPress={() => {
+          if (Platform.OS === 'web') {
+            console.log('[UI] onPress (Web) activado');
+            setShowReactions(true);
+          }
+        }}
         delayLongPress={400}
         style={({ pressed }) => ({
           backgroundColor: isOwn
@@ -82,7 +91,7 @@ export default function ChatBubble({ message, isOwn, senderName, isMentioned, on
         {mensajeDecorado.render()}
       </Pressable>
 
-      {/* Modal de Reacciones — capa nativa independiente que sí captura toques */}
+      {/* Modal de Reacciones */}
       <Modal
         visible={showReactions}
         transparent={true}
@@ -96,7 +105,6 @@ export default function ChatBubble({ message, isOwn, senderName, isMentioned, on
             alignItems: 'center',
             backgroundColor: 'rgba(0,0,0,0.3)',
           }}>
-            {/* Contenedor de emojis — detener propagación para que no cierre al tocar aquí */}
             <TouchableWithoutFeedback onPress={() => { }}>
               <View style={{
                 flexDirection: 'row',

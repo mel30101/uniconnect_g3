@@ -1,10 +1,9 @@
-import { sendMessage as sendMessageUC, sendFileMessage as sendFileMessageUC } from '../../../di/container';
-import { useState } from 'react';
-import { Button, TextInput, View, Pressable, Text, ActivityIndicator, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/presentation/store/useAuthStore';
 import * as DocumentPicker from 'expo-document-picker';
-import { Platform } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { sendFileMessage as sendFileMessageUC, sendMessage as sendMessageUC } from '../../../di/container';
 
 export default function MessageInput({ chatId }: { chatId: string }) {
   const [text, setText] = useState('');
@@ -126,4 +125,4 @@ export default function MessageInput({ chatId }: { chatId: string }) {
       </Pressable>
     </View>
   );
-}
+}

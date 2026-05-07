@@ -1,8 +1,8 @@
-import { IGroupChatRepository } from '../../domain/repositories/IGroupChatRepository';
-import { Message } from '../../domain/entities/Message';
-import { db } from '../sources/FirebaseClient';
-import apiClient from '../sources/ApiClient';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { Message } from '../../domain/entities/Message';
+import { IGroupChatRepository } from '../../domain/repositories/IGroupChatRepository';
+import apiClient from '../sources/ApiClient';
+import { db } from '../sources/FirebaseClient';
 
 export class FirestoreGroupChatRepository implements IGroupChatRepository {
   async sendGroupMessage(groupId: string, text: string, senderId: string): Promise<void> {
