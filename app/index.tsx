@@ -8,6 +8,7 @@ import { UCaldasTheme } from './constants/Colors';
 
 export default function LoginScreen() {
   const setUser = useAuthStore((state) => state.setUser);
+  const setToken = useAuthStore((state) => state.setToken);
   const [authError, setAuthError] = useState(false);
   const router = useRouter();
 
@@ -34,6 +35,9 @@ export default function LoginScreen() {
         }
 
         else if (queryParams && queryParams.uid) {
+          if (queryParams.token) {
+            setToken(queryParams.token as string);
+          }
           setUser({
             uid: queryParams.uid as string,
             name: queryParams.name as string,
@@ -55,6 +59,10 @@ export default function LoginScreen() {
       if (params.get('error') === 'domain_not_allowed') {
         setAuthError(true);
       } else if (params.get('uid')) {
+        const tokenParam = params.get('token');
+        if (tokenParam) {
+          setToken(tokenParam);
+        }
         setUser({
           uid: params.get('uid') as string,
           name: params.get('name') as string,
